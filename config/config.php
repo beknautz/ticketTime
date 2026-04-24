@@ -6,7 +6,7 @@ define('APP_ENV', getenv('APP_ENV') ?: 'production'); // development | productio
 define('APP_DEBUG', APP_ENV === 'development');
 
 // ── Site ─────────────────────────────────────────────────────────────────────
-define('SITE_NAME', 'TicketTime');
+define('SITE_NAME', 'Toppenish Rodeo Tickets');
 define('SITE_URL', rtrim(getenv('SITE_URL') ?: 'https://trodeo.enigmaiq.ai', '/'));
 define('BASE_PATH', dirname(__DIR__));
 
@@ -28,7 +28,7 @@ define('SESSION_LIFETIME', 7200); // seconds
 define('CART_MAX_ITEMS', 20);
 
 // ── Support ───────────────────────────────────────────────────────────────────
-define('SUPPORT_EMAIL', getenv('SUPPORT_EMAIL') ?: 'support@tickettime.local');
+define('SUPPORT_EMAIL', getenv('SUPPORT_EMAIL') ?: 'support@toppenishrodeotickets.com');
 define('SUPPORT_PHONE', getenv('SUPPORT_PHONE') ?: '(555) 000-0000');
 
 // ── Error handling ───────────────────────────────────────────────────────────
