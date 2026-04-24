@@ -1,0 +1,6 @@
+# Deny direct HTTP access to storage
+# Allow only specific file types served via PHP
+Options -Indexes
+<FilesMatch "\.(php|phtml|php3)$">
+  Deny from all
+</FilesMatch>
