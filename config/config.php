@@ -7,7 +7,7 @@ define('APP_DEBUG', APP_ENV === 'development');
 
 // ── Site ─────────────────────────────────────────────────────────────────────
 define('SITE_NAME', 'TicketTime');
-define('SITE_URL', rtrim(getenv('SITE_URL') ?: 'http://localhost', '/'));
+define('SITE_URL', rtrim(getenv('SITE_URL') ?: 'https://trodeo.enigmaiq.ai', '/'));
 define('BASE_PATH', dirname(__DIR__));
 
 // ── Paths ─────────────────────────────────────────────────────────────────────
