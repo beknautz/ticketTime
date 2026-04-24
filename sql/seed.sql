@@ -1,5 +1,4 @@
 -- TicketTime Seed Data
-USE tickettime;
 
 -- Default admin user: admin@tickettime.local / Admin1234!
 INSERT INTO admins (name, email, password_hash, role, status) VALUES

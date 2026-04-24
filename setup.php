@@ -31,15 +31,11 @@ if ($isWeb) {
 $pdo = null;
 
 try {
-    // Connect without database selected to create it
-    $dsn = sprintf('mysql:host=%s;port=%s;charset=utf8mb4', DB_HOST, DB_PORT);
+    // Connect directly to the configured database
+    $dsn = sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', DB_HOST, DB_PORT, DB_NAME);
     $pdo = new PDO($dsn, DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
 
     echo "✓ Connected to MySQL{$nl}";
-
-    // Create database
-    $pdo->exec("CREATE DATABASE IF NOT EXISTS `" . DB_NAME . "` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-    $pdo->exec("USE `" . DB_NAME . "`");
     echo "✓ Database `" . DB_NAME . "` ready{$nl}";
 
     // Run schema

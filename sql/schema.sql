@@ -4,8 +4,6 @@
 SET FOREIGN_KEY_CHECKS = 0;
 SET SQL_MODE = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION';
 
-CREATE DATABASE IF NOT EXISTS tickettime CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE tickettime;
 
 -- --------------------------------------------------------
 -- admins
