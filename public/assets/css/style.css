@@ -28,13 +28,22 @@
   --bs-emphasis-color: #f8f9fa;
 }
 
-/* ── Navbar logo ─────────────────────────────────────────── */
+/* ── Navbar logo (overflows above + below the bar) ───────── */
 .navbar-brand img {
-  height: 48px;
+  height: 96px;
   width: auto;
   object-fit: contain;
-  /* boost visibility of any dark parts of a transparent PNG on dark nav */
-  filter: drop-shadow(0 1px 3px rgba(0,0,0,.6));
+  /* bleed ~16px above and below the ~64px navbar */
+  margin-top: -18px;
+  margin-bottom: -18px;
+  position: relative;
+  z-index: 1050;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,.7));
+  transition: transform .15s ease;
+}
+
+.navbar-brand img:hover {
+  transform: scale(1.03);
 }
 
 /* ── Layout ──────────────────────────────────────────────── */

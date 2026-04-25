@@ -2,7 +2,7 @@
 $cartCount = getCartItemCount();
 $customer  = currentCustomer();
 ?>
-<nav class="navbar navbar-expand-lg navbar-dark sticky-top" style="background:#0a0c10;border-bottom:1px solid #2a3148">
+<nav class="navbar navbar-expand-lg navbar-dark sticky-top" style="background:#0a0c10;border-bottom:1px solid #2a3148;overflow:visible">
   <div class="container">
     <a class="navbar-brand" href="<?= SITE_URL ?>/public/index.php">
       <?php
