@@ -29,9 +29,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($customerModel->emailExists($email)) {
             $errors[] = 'An account with that email already exists. <a href="' . SITE_URL . '/public/customer/login.php">Sign in instead?</a>';
         } else {
-            $customerId = $customerModel->register(compact('email', 'password', 'first_name', 'last_name', 'phone') + [
+            $customerId = $customerModel->register([
+                'email'      => $email,
+                'password'   => $password,
                 'first_name' => $firstName,
                 'last_name'  => $lastName,
+                'phone'      => $phone,
             ]);
             $customer = $customerModel->getById($customerId);
             $customerModel->linkOrdersByEmail($customerId, $email);
@@ -59,8 +62,8 @@ require_once BASE_PATH . '/includes/nav.php';
       <?php if ($errors): ?>
         <div class="alert alert-danger">
           <ul class="mb-0">
-            <?php foreach ($errors as $e): ?>
-              <li><?= $e ?></li>
+            <?php foreach ($errors as $err): ?>
+              <li><?= $err ?></li>
             <?php endforeach; ?>
           </ul>
         </div>

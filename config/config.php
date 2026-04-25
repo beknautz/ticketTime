@@ -60,6 +60,7 @@ require_once BASE_PATH . '/config/stripe.php';
 require_once BASE_PATH . '/config/mail.php';
 require_once BASE_PATH . '/includes/helpers.php';
 require_once BASE_PATH . '/includes/csrf.php';
+require_once BASE_PATH . '/includes/auth.php';
 require_once BASE_PATH . '/includes/customer-auth.php';
 
 // Start session

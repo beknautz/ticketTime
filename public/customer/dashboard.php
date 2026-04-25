@@ -2,7 +2,11 @@
 require_once dirname(dirname(__DIR__)) . '/config/config.php';
 requireCustomerLogin();
 
-$customer      = currentCustomer();
+$customer = currentCustomer();
+if (!$customer) {
+    customerLogout();
+    redirect(SITE_URL . '/public/customer/login.php');
+}
 $customerModel = new Customer();
 $orders        = $customerModel->getOrders($customer['customer_id'], $customer['email']);
 

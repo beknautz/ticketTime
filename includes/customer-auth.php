@@ -16,7 +16,11 @@ function currentCustomer(): ?array
     if (!isCustomerLoggedIn()) return null;
     static $cache = null;
     if ($cache === null) {
-        $cache = (new Customer())->getById(currentCustomerId());
+        try {
+            $cache = (new Customer())->getById(currentCustomerId());
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
     return $cache;
 }
