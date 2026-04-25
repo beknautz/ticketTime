@@ -78,15 +78,16 @@ try {
     // Create order
     $orderModel = new Order();
     $orderId    = $orderModel->create([
-        'event_id'  => $eventId,
-        'first_name'=> $firstName,
-        'last_name' => $lastName,
-        'email'     => $email,
-        'phone'     => $phone,
-        'subtotal'  => $totals['subtotal'],
-        'fee_total' => $totals['fees'],
-        'tax_total' => $totals['tax'],
-        'total'     => $totals['total'],
+        'event_id'   => $eventId,
+        'first_name' => $firstName,
+        'last_name'  => $lastName,
+        'email'      => $email,
+        'phone'      => $phone,
+        'customer_id'=> isCustomerLoggedIn() ? currentCustomerId() : null,
+        'subtotal'   => $totals['subtotal'],
+        'fee_total'  => $totals['fees'],
+        'tax_total'  => $totals['tax'],
+        'total'      => $totals['total'],
     ]);
 
     // Add order items

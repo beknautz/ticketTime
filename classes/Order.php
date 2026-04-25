@@ -122,17 +122,18 @@ class Order
 
         $stmt = $this->db->prepare("
             INSERT INTO orders
-                (public_order_id, event_id, customer_first_name, customer_last_name,
+                (public_order_id, event_id, customer_id, customer_first_name, customer_last_name,
                  customer_email, customer_phone, subtotal, service_fee_total, tax_total, total,
                  status, payment_provider, order_barcode_token, willcall_status, ip_address, user_agent)
             VALUES
-                (:public_order_id, :event_id, :first_name, :last_name,
+                (:public_order_id, :event_id, :customer_id, :first_name, :last_name,
                  :email, :phone, :subtotal, :fee_total, :tax_total, :total,
                  'pending', 'stripe', :barcode_token, 'not_needed', :ip, :ua)
         ");
         $stmt->execute([
             'public_order_id' => $publicOrderId,
             'event_id'        => $data['event_id'],
+            'customer_id'     => $data['customer_id'] ?? null,
             'first_name'      => $data['first_name'],
             'last_name'       => $data['last_name'],
             'email'           => $data['email'],

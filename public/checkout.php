@@ -15,6 +15,18 @@ $firstItem  = reset($cart);
 $eventModel = new Event();
 $event      = $eventModel->getById((int)$firstItem['event_id']);
 
+// Pre-fill from customer profile if logged in
+$prefill = [];
+if (isCustomerLoggedIn()) {
+    $c = currentCustomer();
+    $prefill = [
+        'first_name' => $c['first_name'] ?? '',
+        'last_name'  => $c['last_name'] ?? '',
+        'email'      => $c['email'] ?? '',
+        'phone'      => $c['phone'] ?? '',
+    ];
+}
+
 $pageTitle = 'Checkout';
 $extraHead = '<meta name="csrf-token" content="' . e(csrfToken()) . '">';
 require_once BASE_PATH . '/includes/header.php';
@@ -48,25 +60,41 @@ require_once BASE_PATH . '/includes/nav.php';
               <form id="checkoutForm">
                 <?= csrfField() ?>
                 <div class="row g-3">
+                  <?php if (!isCustomerLoggedIn()): ?>
+                  <div class="col-12">
+                    <div class="alert alert-light border d-flex align-items-center gap-2 py-2">
+                      <i class="bi bi-person-circle text-primary fs-5"></i>
+                      <span class="small">
+                        <a href="<?= SITE_URL ?>/public/customer/login.php?redirect=<?= urlencode($_SERVER['REQUEST_URI']) ?>">Sign in</a>
+                        to auto-fill your details and save this order to your account.
+                      </span>
+                    </div>
+                  </div>
+                  <?php endif; ?>
+
                   <div class="col-sm-6">
                     <label class="form-label fw-semibold">First Name <span class="text-danger">*</span></label>
                     <input type="text" name="first_name" class="form-control form-control-lg"
+                           value="<?= e($prefill['first_name'] ?? '') ?>"
                            required autocomplete="given-name" placeholder="Jane">
                   </div>
                   <div class="col-sm-6">
                     <label class="form-label fw-semibold">Last Name <span class="text-danger">*</span></label>
                     <input type="text" name="last_name" class="form-control form-control-lg"
+                           value="<?= e($prefill['last_name'] ?? '') ?>"
                            required autocomplete="family-name" placeholder="Smith">
                   </div>
                   <div class="col-12">
                     <label class="form-label fw-semibold">Email Address <span class="text-danger">*</span></label>
                     <input type="email" name="email" class="form-control form-control-lg"
+                           value="<?= e($prefill['email'] ?? '') ?>"
                            required autocomplete="email" placeholder="jane@example.com">
                     <div class="form-text">Your tickets will be emailed here.</div>
                   </div>
                   <div class="col-12">
                     <label class="form-label fw-semibold">Phone Number</label>
                     <input type="tel" name="phone" class="form-control form-control-lg"
+                           value="<?= e($prefill['phone'] ?? '') ?>"
                            autocomplete="tel" placeholder="(555) 555-5555">
                   </div>
                 </div>
