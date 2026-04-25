@@ -2,7 +2,9 @@
 
 :root,
 [data-bs-theme="dark"] {
-  --tt-primary: #0d6efd;
+  --tt-primary:        #D3AF37;
+  --tt-primary-dark:   #b8941e;
+  --tt-primary-rgb:    211, 175, 55;
   --tt-success: #198754;
   --tt-danger:  #dc3545;
   --tt-warning: #fd7e14;
@@ -17,16 +19,50 @@
   --tt-muted:      #8892a4;
 
   /* Bootstrap dark overrides */
-  --bs-body-bg:        #0d0f14;
-  --bs-body-color:     #e2e8f0;
-  --bs-card-bg:        #1a1f2e;
-  --bs-card-border-color: #2a3148;
-  --bs-border-color:   #2a3148;
-  --bs-secondary-bg:   #141720;
-  --bs-tertiary-bg:    #1e2436;
-  --bs-secondary-color:#8892a4;
-  --bs-emphasis-color: #f8f9fa;
+  --bs-body-bg:          #0d0f14;
+  --bs-body-color:       #e2e8f0;
+  --bs-card-bg:          #1a1f2e;
+  --bs-card-border-color:#2a3148;
+  --bs-border-color:     #2a3148;
+  --bs-secondary-bg:     #141720;
+  --bs-tertiary-bg:      #1e2436;
+  --bs-secondary-color:  #8892a4;
+  --bs-emphasis-color:   #f8f9fa;
+
+  /* Bootstrap primary → gold */
+  --bs-primary:          #D3AF37;
+  --bs-primary-rgb:      211, 175, 55;
+  --bs-link-color:       #D3AF37;
+  --bs-link-hover-color: #e8c94d;
 }
+
+/* ── Primary button: dark text on gold for readability ───── */
+.btn-primary {
+  --bs-btn-color:               #0d0f14;
+  --bs-btn-bg:                  #D3AF37;
+  --bs-btn-border-color:        #D3AF37;
+  --bs-btn-hover-color:         #0d0f14;
+  --bs-btn-hover-bg:            #c49e2f;
+  --bs-btn-hover-border-color:  #b8941e;
+  --bs-btn-active-color:        #0d0f14;
+  --bs-btn-active-bg:           #b8941e;
+  --bs-btn-active-border-color: #ad8c1c;
+  --bs-btn-disabled-bg:         #D3AF37;
+  --bs-btn-disabled-border-color: #D3AF37;
+}
+
+.btn-outline-primary {
+  --bs-btn-color:              #D3AF37;
+  --bs-btn-border-color:       #D3AF37;
+  --bs-btn-hover-color:        #0d0f14;
+  --bs-btn-hover-bg:           #D3AF37;
+  --bs-btn-hover-border-color: #D3AF37;
+  --bs-btn-active-color:       #0d0f14;
+  --bs-btn-active-bg:          #D3AF37;
+}
+
+/* bg-primary text should be dark for contrast on gold */
+.bg-primary { color: #0d0f14 !important; }
 
 /* ── Navbar logo (overflows above + below the bar) ───────── */
 .navbar-brand img {
@@ -119,12 +155,12 @@ hr {
 .event-card .card-img-top {
   height: 180px;
   object-fit: cover;
-  background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+  background: linear-gradient(135deg, #D3AF37 0%, #b8730a 100%);
 }
 
 .event-banner {
   min-height: 180px;
-  background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+  background: linear-gradient(135deg, #D3AF37 0%, #b8730a 100%);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -234,7 +270,7 @@ hr {
 }
 
 .ticket-header {
-  background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+  background: linear-gradient(135deg, #D3AF37 0%, #b8730a 100%);
   color: #fff;
   padding: 24px;
   text-align: center;
@@ -340,7 +376,7 @@ hr {
 
 .admin-sidebar .nav-link:hover,
 .admin-sidebar .nav-link.active {
-  background: rgba(13, 110, 253, .2);
+  background: rgba(211, 175, 55, .15);
   color: #fff;
 }
 
