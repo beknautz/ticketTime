@@ -28,6 +28,15 @@
   --bs-emphasis-color: #f8f9fa;
 }
 
+/* ── Navbar logo ─────────────────────────────────────────── */
+.navbar-brand img {
+  height: 48px;
+  width: auto;
+  object-fit: contain;
+  /* boost visibility of any dark parts of a transparent PNG on dark nav */
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,.6));
+}
+
 /* ── Layout ──────────────────────────────────────────────── */
 body {
   min-height: 100vh;

@@ -4,8 +4,17 @@ $customer  = currentCustomer();
 ?>
 <nav class="navbar navbar-expand-lg navbar-dark sticky-top" style="background:#0a0c10;border-bottom:1px solid #2a3148">
   <div class="container">
-    <a class="navbar-brand fw-bold" href="<?= SITE_URL ?>/public/index.php">
-      <i class="bi bi-ticket-perforated-fill me-1"></i><?= SITE_NAME ?>
+    <a class="navbar-brand" href="<?= SITE_URL ?>/public/index.php">
+      <?php
+        $logoPath = BASE_PATH . '/public/assets/img/logo.png';
+        if (file_exists($logoPath)):
+      ?>
+        <img src="<?= SITE_URL ?>/public/assets/img/logo.png"
+             alt="<?= e(SITE_NAME) ?>"
+             style="height:48px;width:auto;object-fit:contain">
+      <?php else: ?>
+        <i class="bi bi-ticket-perforated-fill me-1"></i><?= SITE_NAME ?>
+      <?php endif; ?>
     </a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
       <span class="navbar-toggler-icon"></span>
