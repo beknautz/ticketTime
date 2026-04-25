@@ -10,8 +10,7 @@ $customer  = currentCustomer();
         if (file_exists($logoPath)):
       ?>
         <img src="<?= SITE_URL ?>/public/assets/img/logo.png"
-             alt="<?= e(SITE_NAME) ?>"
-             style="height:48px;width:auto;object-fit:contain">
+             alt="<?= e(SITE_NAME) ?>">
       <?php else: ?>
         <i class="bi bi-ticket-perforated-fill me-1"></i><?= SITE_NAME ?>
       <?php endif; ?>
