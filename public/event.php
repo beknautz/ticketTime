@@ -44,9 +44,16 @@ require_once BASE_PATH . '/includes/nav.php';
   <!-- Event Header -->
   <div class="row g-4 mb-4">
     <div class="col-md-8">
-      <div class="event-banner mb-4">
-        <i class="bi bi-music-note-beamed"></i>
-      </div>
+      <?php if (!empty($event['event_image'])): ?>
+        <div class="event-banner-img mb-4">
+          <img src="<?= SITE_URL ?>/public/assets/uploads/events/<?= e($event['event_image']) ?>"
+               alt="<?= e($event['event_name']) ?>">
+        </div>
+      <?php else: ?>
+        <div class="event-banner mb-4">
+          <i class="bi bi-music-note-beamed"></i>
+        </div>
+      <?php endif; ?>
       <h1 class="fw-bold"><?= e($event['event_name']) ?></h1>
       <div class="d-flex flex-wrap gap-3 my-3">
         <span class="text-muted fs-5"><i class="bi bi-calendar3 me-1"></i><?= formatDate($event['event_start'], 'D, F j, Y') ?></span>

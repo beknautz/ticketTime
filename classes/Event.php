@@ -111,6 +111,12 @@ class Event
         ]);
     }
 
+    public function updateImage(int $id, ?string $filename): void
+    {
+        $this->db->prepare("UPDATE events SET event_image = ? WHERE event_id = ?")
+                 ->execute([$filename, $id]);
+    }
+
     public function getTicketTypes(int $eventId, bool $activeOnly = false): array
     {
         $sql = "SELECT * FROM ticket_types WHERE event_id = ?";

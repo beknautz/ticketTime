@@ -101,6 +101,21 @@ main {
   font-size: 4rem;
 }
 
+/* ── Event banner image (replaces gradient when photo set) ── */
+.event-banner-img {
+  border-radius: 8px;
+  overflow: hidden;
+  width: 100%;
+  height: 320px;
+}
+
+.event-banner-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 /* ── Ticket Type Card ────────────────────────────────────── */
 .ticket-type-card {
   border: 2px solid #dee2e6;
