@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
         } else {
             // Remove banner image file if present
             if (!empty($event['event_image'])) {
-                $img = BASE_PATH . '/public/assets/uploads/events/' . basename($event['event_image']);
+                $img = BASE_PATH . '/public/assets/img/events/' . basename($event['event_image']);
                 if (file_exists($img)) unlink($img);
             }
             flashMessage('success', '"' . $event['event_name'] . '" deleted.');

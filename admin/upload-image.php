@@ -22,7 +22,7 @@ if (!hash_equals(csrfToken(), $token)) {
 }
 
 $maxBytes  = 8 * 1024 * 1024;
-$uploadDir = BASE_PATH . '/public/assets/uploads/events/';
+$uploadDir = BASE_PATH . '/public/assets/img/events/';
 
 // Read raw bytes — no temp file involved
 $imageRaw = file_get_contents('php://input', false, null, 0, $maxBytes + 1);
