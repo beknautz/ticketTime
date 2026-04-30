@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!preg_match('/^data:(image\/(?:jpeg|png|webp));base64,(.+)$/s', $imageB64, $m)) {
             $errors[] = 'Invalid image format. Please select a JPEG, PNG, or WebP file.';
         } else {
-            $imageRaw = base64_decode($m[2], strict: true);
+            $imageRaw = base64_decode($m[2], true);
             if ($imageRaw === false) {
                 $errors[] = 'Image data is corrupted. Please try again.';
                 $imageRaw = null;
@@ -46,16 +46,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $errors[] = 'Image must be under 8 MB.';
                 $imageRaw = null;
             } else {
-                // Verify actual bytes, not just the declared MIME
-                $finfo    = finfo_open(FILEINFO_MIME_TYPE);
-                $realMime = finfo_buffer($finfo, $imageRaw);
-                finfo_close($finfo);
-                $allowed  = ['image/jpeg', 'image/png', 'image/webp'];
-                if (!in_array($realMime, $allowed, true)) {
-                    $errors[] = 'Invalid image type detected.';
+                // Verify actual image bytes using getimagesizefromstring (no fileinfo ext needed)
+                $info = @getimagesizefromstring($imageRaw);
+                $mimeMap = [IMAGETYPE_JPEG => 'jpg', IMAGETYPE_PNG => 'png', IMAGETYPE_WEBP => 'webp'];
+                if (!$info || !isset($mimeMap[$info[2]])) {
+                    $errors[] = 'Invalid image type detected. Please use JPEG, PNG, or WebP.';
                     $imageRaw = null;
                 } else {
-                    $imageExt = match($realMime) { 'image/png' => 'png', 'image/webp' => 'webp', default => 'jpg' };
+                    $imageExt = $mimeMap[$info[2]];
                 }
             }
         }
