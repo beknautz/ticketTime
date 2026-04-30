@@ -12,17 +12,8 @@ $errors     = [];
 $uploadDir  = BASE_PATH . '/public/assets/uploads/events/';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // TEMP DIAGNOSTIC — writes to public/phptest-out.txt so IIS buffering can't hide the crash
-    $__log = BASE_PATH . '/public/phptest-out.txt';
-    $__t   = function(string $m) use ($__log): void {
-        file_put_contents($__log, date('H:i:s') . " $m\n", FILE_APPEND | LOCK_EX);
-    };
-    file_put_contents($__log, "=== POST " . date('Y-m-d H:i:s') . " ===\n");
-    $__t('A: verifyCsrf');
     verifyCsrf();
-    $__t('A1: csrf passed, memory=' . memory_get_usage(true));
 
-    $__t('A2: building data array');
     $data = [
         'event_name'        => trim($_POST['event_name'] ?? ''),
         'event_slug'        => preg_replace('/[^a-z0-9-]/', '', strtolower(trim($_POST['event_slug'] ?? ''))),
@@ -34,84 +25,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'sale_end'          => trim($_POST['sale_end'] ?? ''),
         'status'            => $_POST['status'] ?? 'draft',
     ];
-    $__t('A3: data array built');
 
     if (!$data['event_name'])  $errors[] = 'Event name is required';
     if (!$data['event_start']) $errors[] = 'Event start date is required';
     if (!$data['event_end'])   $errors[] = 'Event end date is required';
 
-    // Validate base64 image — avoid regex on multi-MB string (causes PCRE crash on IIS)
-    $imageRaw   = null;
-    $imageExt   = null;
-    $__t('A4: reading image_base64 field, POST size approx=' . strlen($_POST['image_base64'] ?? ''));
-    $imageB64   = $_POST['image_base64'] ?? '';  // no trim — avoids string copy on large data
-    $__t('A5: imageB64 length=' . strlen($imageB64));
-    if ($imageB64 !== '') {
-        // Parse the data URI with string functions, not regex, to avoid PCRE on large data
-        $commaPos = strpos($imageB64, ',');
-        $header   = $commaPos !== false ? substr($imageB64, 0, $commaPos) : '';
-        $__t('A6: header=' . $header . ' commaPos=' . var_export($commaPos, true));
-        // header looks like: data:image/jpeg;base64
-        $mimeMap  = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
-        $detectedMime = '';
-        foreach (array_keys($mimeMap) as $mime) {
-            if ($header === 'data:' . $mime . ';base64') {
-                $detectedMime = $mime;
-                break;
-            }
-        }
-        $__t('A7: detectedMime=' . $detectedMime);
+    // Handle image upload via standard multipart file upload
+    $imageFile = $_FILES['event_image'] ?? null;
+    $hasUpload = $imageFile && $imageFile['error'] !== UPLOAD_ERR_NO_FILE;
 
-        if (!$detectedMime || $commaPos === false) {
-            $errors[] = 'Invalid image format. Please select a JPEG, PNG, or WebP file.';
+    if ($hasUpload) {
+        if ($imageFile['error'] !== UPLOAD_ERR_OK) {
+            $uploadErrors = [
+                UPLOAD_ERR_INI_SIZE   => 'File exceeds server upload limit.',
+                UPLOAD_ERR_FORM_SIZE  => 'File exceeds form upload limit.',
+                UPLOAD_ERR_PARTIAL    => 'File was only partially uploaded.',
+                UPLOAD_ERR_NO_TMP_DIR => 'Server temporary directory is missing.',
+                UPLOAD_ERR_CANT_WRITE => 'Server could not write the uploaded file.',
+                UPLOAD_ERR_EXTENSION  => 'Upload blocked by server extension.',
+            ];
+            $errors[] = $uploadErrors[$imageFile['error']] ?? 'Upload error code ' . $imageFile['error'];
+        } elseif ($imageFile['size'] > 8 * 1024 * 1024) {
+            $errors[] = 'Image must be under 8 MB.';
         } else {
-            $__t('A8: extracting b64data via substr');
-            $b64data  = substr($imageB64, $commaPos + 1);
-            unset($imageB64); // free the full data URI — no longer needed
-            $__t('A9: b64data len=' . strlen($b64data) . ' memory=' . memory_get_usage(true));
-            $__t('A10: calling base64_decode');
-            $imageRaw = base64_decode($b64data, true);
-            unset($b64data); // free the base64 string
-            $__t('A11: base64_decode done, imageRaw=' . ($imageRaw === false ? 'FALSE' : strlen($imageRaw)) . ' memory=' . memory_get_usage(true));
-            if ($imageRaw === false) {
-                $errors[] = 'Image data is corrupted. Please try again.';
-                $imageRaw = null;
-            } elseif (strlen($imageRaw) > 8 * 1024 * 1024) {
-                $errors[] = 'Image must be under 8 MB.';
-                $imageRaw = null;
-            } else {
-                // Verify magic bytes to confirm the file matches its declared type
-                $magic   = substr($imageRaw, 0, 12);
-                $isJpeg  = (substr($magic, 0, 2) === "\xFF\xD8");
-                $isPng   = (substr($magic, 0, 8) === "\x89PNG\r\n\x1a\n");
-                $isWebp  = (substr($magic, 0, 4) === 'RIFF' && substr($magic, 8, 4) === 'WEBP');
-                $typeOk  = ($detectedMime === 'image/jpeg' && $isJpeg)
-                        || ($detectedMime === 'image/png'  && $isPng)
-                        || ($detectedMime === 'image/webp' && $isWebp);
-                $__t('A12: magic check typeOk=' . ($typeOk ? 'YES' : 'NO'));
-                if (!$typeOk) {
-                    $errors[] = 'Image content does not match its declared type.';
-                    $imageRaw = null;
-                } else {
-                    $imageExt = $mimeMap[$detectedMime];
-                }
+            // Validate by magic bytes — no extension needed
+            $fp    = fopen($imageFile['tmp_name'], 'rb');
+            $magic = fread($fp, 12);
+            fclose($fp);
+            $isJpeg = substr($magic, 0, 2) === "\xFF\xD8";
+            $isPng  = substr($magic, 0, 8) === "\x89PNG\r\n\x1a\n";
+            $isWebp = substr($magic, 0, 4) === 'RIFF' && substr($magic, 8, 4) === 'WEBP';
+            if (!$isJpeg && !$isPng && !$isWebp) {
+                $errors[] = 'Please upload a JPEG, PNG, or WebP image.';
             }
         }
-    } else {
-        $__t('A5b: no image submitted');
     }
 
-    $__t('B: validation done, errors=' . count($errors) . ' imageRaw=' . ($imageRaw ? strlen($imageRaw) : 'null') . ' imageExt=' . ($imageExt ?? 'null'));
     if (!$errors) {
-        $__t('C: mkdir uploadDir');
         if (!is_dir($uploadDir)) {
-            $mkOk = mkdir($uploadDir, 0755, true);
-            $__t('C1: mkdir result=' . ($mkOk ? 'ok' : 'FAILED'));
-        } else {
-            $__t('C1: dir already exists');
+            mkdir($uploadDir, 0755, true);
         }
 
-        $__t('D: save event');
         if ($isNew) {
             $id    = $eventModel->create($data);
             $event = $eventModel->getById($id);
@@ -120,37 +74,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $eventModel->update($id, $data);
             $event = $eventModel->getById($id);
         }
-        $__t('E: event saved id=' . $id);
 
         // Remove image if requested
         if (!empty($_POST['remove_image']) && !empty($event['event_image'])) {
-            $__t('F: removing old image');
             $old = $uploadDir . basename($event['event_image']);
             if (file_exists($old)) unlink($old);
             $eventModel->updateImage($id, null);
             $event = $eventModel->getById($id);
         }
 
-        // Write decoded image directly — no temp file involved
-        if ($imageRaw !== null && empty($_POST['remove_image'])) {
-            $__t('G: writing image len=' . strlen($imageRaw) . ' ext=' . $imageExt);
+        // Save uploaded image
+        if ($hasUpload && $imageFile['error'] === UPLOAD_ERR_OK && empty($_POST['remove_image'])) {
             if (!empty($event['event_image'])) {
                 $old = $uploadDir . basename($event['event_image']);
                 if (file_exists($old)) unlink($old);
             }
-            $__t('H: calling random_bytes');
-            $randHex = bin2hex(random_bytes(6));
-            $__t('I: random_bytes OK=' . $randHex);
-            $name = 'event-' . $id . '-' . $randHex . '.' . $imageExt;
-            $__t('J: file_put_contents path=' . $uploadDir . $name);
-            $wrote = file_put_contents($uploadDir . $name, $imageRaw);
-            $__t('K: file_put_contents result=' . var_export($wrote, true));
+            $ext  = $isWebp ? 'webp' : ($isPng ? 'png' : 'jpg');
+            $name = 'event-' . $id . '-' . bin2hex(random_bytes(6)) . '.' . $ext;
+            move_uploaded_file($imageFile['tmp_name'], $uploadDir . $name);
             $eventModel->updateImage($id, $name);
-            $__t('L: updateImage done');
             $event = $eventModel->getById($id);
         }
 
-        $__t('M: flashMessage + redirect');
         flashMessage('success', 'Event saved!');
         redirect(SITE_URL . '/admin/event-edit.php?id=' . $id);
     }
@@ -174,11 +119,8 @@ require_once __DIR__ . '/includes/admin-header.php';
   </div>
 <?php endif; ?>
 
-<!-- No enctype="multipart/form-data" — image is submitted as base64 POST field -->
-<form method="post" class="row g-4">
+<form method="post" enctype="multipart/form-data" class="row g-4">
   <?= csrfField() ?>
-  <!-- Hidden field that holds the base64-encoded image -->
-  <input type="hidden" name="image_base64" id="imageBase64">
 
   <div class="col-md-8">
     <div class="card shadow-sm">
@@ -235,7 +177,7 @@ require_once __DIR__ . '/includes/admin-header.php';
         <label class="form-label fw-semibold small">
           <?= !empty($event['event_image']) ? 'Replace with new image' : 'Upload banner image' ?>
         </label>
-        <input type="file" id="eventImageInput" class="form-control form-control-sm"
+        <input type="file" name="event_image" id="eventImageInput" class="form-control form-control-sm"
                accept="image/jpeg,image/png,image/webp">
         <div class="form-text">JPEG, PNG or WebP · max 8 MB<br>Recommended: 1600 × 600 px or wider</div>
 
@@ -243,7 +185,6 @@ require_once __DIR__ . '/includes/admin-header.php';
           <p class="small fw-semibold mb-1 text-muted">Preview:</p>
           <img id="imagePreview" src="" alt="Preview"
                class="img-fluid rounded" style="width:100%;height:130px;object-fit:cover">
-          <p class="text-success small mt-1 mb-0"><i class="bi bi-check-circle me-1"></i>Ready to save</p>
         </div>
         <div id="imageError" class="text-danger small mt-2" style="display:none"></div>
       </div>
@@ -317,23 +258,20 @@ document.getElementById('eventSlug').addEventListener('input', function() {
   this.dataset.manual = 'true';
 });
 
-// Encode selected image as base64 into hidden field — no temp file on server
+// Show preview when a file is selected
 document.getElementById('eventImageInput').addEventListener('change', function() {
   const errDiv   = document.getElementById('imageError');
   const prevWrap = document.getElementById('imagePreviewWrap');
   const preview  = document.getElementById('imagePreview');
-  const hidden   = document.getElementById('imageBase64');
   const file     = this.files[0];
 
   errDiv.style.display   = 'none';
   prevWrap.style.display = 'none';
-  hidden.value           = '';
 
   if (!file) return;
 
-  const maxBytes = 8 * 1024 * 1024;
-  if (file.size > maxBytes) {
-    errDiv.textContent  = 'Image must be under 8 MB. Please choose a smaller file.';
+  if (file.size > 8 * 1024 * 1024) {
+    errDiv.textContent   = 'Image must be under 8 MB.';
     errDiv.style.display = 'block';
     this.value = '';
     return;
@@ -341,13 +279,8 @@ document.getElementById('eventImageInput').addEventListener('change', function()
 
   const reader = new FileReader();
   reader.onload = function(e) {
-    hidden.value           = e.target.result; // data:image/jpeg;base64,...
     preview.src            = e.target.result;
     prevWrap.style.display = 'block';
-  };
-  reader.onerror = function() {
-    errDiv.textContent   = 'Could not read file. Please try again.';
-    errDiv.style.display = 'block';
   };
   reader.readAsDataURL(file);
 });
