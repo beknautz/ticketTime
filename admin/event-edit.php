@@ -20,7 +20,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     file_put_contents($__log, "=== POST " . date('Y-m-d H:i:s') . " ===\n");
     $__t('A: verifyCsrf');
     verifyCsrf();
+    $__t('A1: csrf passed, memory=' . memory_get_usage(true));
 
+    $__t('A2: building data array');
     $data = [
         'event_name'        => trim($_POST['event_name'] ?? ''),
         'event_slug'        => preg_replace('/[^a-z0-9-]/', '', strtolower(trim($_POST['event_slug'] ?? ''))),
@@ -32,6 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'sale_end'          => trim($_POST['sale_end'] ?? ''),
         'status'            => $_POST['status'] ?? 'draft',
     ];
+    $__t('A3: data array built');
 
     if (!$data['event_name'])  $errors[] = 'Event name is required';
     if (!$data['event_start']) $errors[] = 'Event start date is required';
@@ -40,11 +43,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validate base64 image — avoid regex on multi-MB string (causes PCRE crash on IIS)
     $imageRaw   = null;
     $imageExt   = null;
-    $imageB64   = trim($_POST['image_base64'] ?? '');
+    $__t('A4: reading image_base64 field, POST size approx=' . strlen($_POST['image_base64'] ?? ''));
+    $imageB64   = $_POST['image_base64'] ?? '';  // no trim — avoids string copy on large data
+    $__t('A5: imageB64 length=' . strlen($imageB64));
     if ($imageB64 !== '') {
         // Parse the data URI with string functions, not regex, to avoid PCRE on large data
         $commaPos = strpos($imageB64, ',');
         $header   = $commaPos !== false ? substr($imageB64, 0, $commaPos) : '';
+        $__t('A6: header=' . $header . ' commaPos=' . var_export($commaPos, true));
         // header looks like: data:image/jpeg;base64
         $mimeMap  = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
         $detectedMime = '';
@@ -54,12 +60,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 break;
             }
         }
+        $__t('A7: detectedMime=' . $detectedMime);
 
         if (!$detectedMime || $commaPos === false) {
             $errors[] = 'Invalid image format. Please select a JPEG, PNG, or WebP file.';
         } else {
+            $__t('A8: extracting b64data via substr');
             $b64data  = substr($imageB64, $commaPos + 1);
+            unset($imageB64); // free the full data URI — no longer needed
+            $__t('A9: b64data len=' . strlen($b64data) . ' memory=' . memory_get_usage(true));
+            $__t('A10: calling base64_decode');
             $imageRaw = base64_decode($b64data, true);
+            unset($b64data); // free the base64 string
+            $__t('A11: base64_decode done, imageRaw=' . ($imageRaw === false ? 'FALSE' : strlen($imageRaw)) . ' memory=' . memory_get_usage(true));
             if ($imageRaw === false) {
                 $errors[] = 'Image data is corrupted. Please try again.';
                 $imageRaw = null;
@@ -75,6 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $typeOk  = ($detectedMime === 'image/jpeg' && $isJpeg)
                         || ($detectedMime === 'image/png'  && $isPng)
                         || ($detectedMime === 'image/webp' && $isWebp);
+                $__t('A12: magic check typeOk=' . ($typeOk ? 'YES' : 'NO'));
                 if (!$typeOk) {
                     $errors[] = 'Image content does not match its declared type.';
                     $imageRaw = null;
@@ -83,6 +97,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         }
+    } else {
+        $__t('A5b: no image submitted');
     }
 
     $__t('B: validation done, errors=' . count($errors) . ' imageRaw=' . ($imageRaw ? strlen($imageRaw) : 'null') . ' imageExt=' . ($imageExt ?? 'null'));
