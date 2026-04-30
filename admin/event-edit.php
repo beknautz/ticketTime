@@ -266,21 +266,31 @@ document.getElementById('eventImageInput').addEventListener('change', function()
   statusDiv.style.display = 'block';
 
   const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+  const uploadUrl = '<?= SITE_URL ?>/admin/upload-image.php';
 
-  fetch('<?= SITE_URL ?>/admin/upload-image.php', {
+  console.log('[upload] starting', { url: uploadUrl, type: file.type, size: file.size, csrf: csrfToken ? 'present' : 'MISSING' });
+
+  function showErr(msg) {
+    console.error('[upload] error:', msg);
+    errDiv.innerHTML        = msg;
+    errDiv.style.display    = 'block';
+    statusDiv.style.display = 'none';
+  }
+
+  fetch(uploadUrl, {
     method: 'POST',
     headers: { 'Content-Type': file.type || 'application/octet-stream', 'X-CSRF-TOKEN': csrfToken },
     body: file,
   })
   .then(function(res) {
-    return res.text().then(function(text) { return { status: res.status, text: text }; });
+    console.log('[upload] HTTP', res.status, res.url);
+    return res.text().then(function(text) { return { status: res.status, url: res.url, text: text }; });
   })
   .then(function(resp) {
+    console.log('[upload] body:', resp.text.substring(0, 500));
     let data;
     try { data = JSON.parse(resp.text); } catch(e) {
-      errDiv.textContent      = 'Server error (' + resp.status + '): ' + resp.text.substring(0, 300);
-      errDiv.style.display    = 'block';
-      statusDiv.style.display = 'none';
+      showErr('HTTP ' + resp.status + ' &mdash; non-JSON response:<br><pre style="font-size:11px;white-space:pre-wrap;max-height:150px;overflow:auto">' + resp.text.substring(0, 500).replace(/</g,'&lt;') + '</pre>');
       return;
     }
     if (data.filename) {
@@ -294,15 +304,11 @@ document.getElementById('eventImageInput').addEventListener('change', function()
       };
       reader.readAsDataURL(file);
     } else {
-      errDiv.textContent      = data.error || 'Upload failed.';
-      errDiv.style.display    = 'block';
-      statusDiv.style.display = 'none';
+      showErr(data.error || 'Upload failed (no filename in response).');
     }
   })
   .catch(function(err) {
-    errDiv.textContent      = 'Network error: ' + err.message;
-    errDiv.style.display    = 'block';
-    statusDiv.style.display = 'none';
+    showErr('Fetch failed: ' + err.name + ': ' + err.message + '<br><small>Check browser console (F12) for details.</small>');
   });
 });
 </script>
