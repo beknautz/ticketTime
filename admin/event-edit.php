@@ -268,48 +268,50 @@ document.getElementById('eventImageInput').addEventListener('change', function()
   const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
   const uploadUrl = '<?= SITE_URL ?>/admin/upload-image.php';
 
-  console.log('[upload] starting', { url: uploadUrl, type: file.type, size: file.size, csrf: csrfToken ? 'present' : 'MISSING' });
-
   function showErr(msg) {
-    console.error('[upload] error:', msg);
     errDiv.innerHTML        = msg;
     errDiv.style.display    = 'block';
     statusDiv.style.display = 'none';
   }
 
-  fetch(uploadUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/octet-stream', 'X-CSRF-TOKEN': csrfToken },
-    body: file,
-  })
-  .then(function(res) {
-    console.log('[upload] HTTP', res.status, res.url);
-    return res.text().then(function(text) { return { status: res.status, url: res.url, text: text }; });
-  })
-  .then(function(resp) {
-    console.log('[upload] body:', resp.text.substring(0, 500));
-    let data;
-    try { data = JSON.parse(resp.text); } catch(e) {
-      showErr('HTTP ' + resp.status + ' &mdash; non-JSON response:<br><pre style="font-size:11px;white-space:pre-wrap;max-height:150px;overflow:auto">' + resp.text.substring(0, 500).replace(/</g,'&lt;') + '</pre>');
-      return;
-    }
-    if (data.filename) {
-      pendingInput.value      = data.filename;
-      statusDiv.innerHTML     = '<i class="bi bi-check-circle-fill text-success me-1"></i> Uploaded';
-      statusDiv.className     = 'mt-2 small text-success';
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        preview.src            = e.target.result;
-        prevWrap.style.display = 'block';
-      };
-      reader.readAsDataURL(file);
-    } else {
-      showErr(data.error || 'Upload failed (no filename in response).');
-    }
-  })
-  .catch(function(err) {
-    showErr('Fetch failed: ' + err.name + ': ' + err.message + '<br><small>Check browser console (F12) for details.</small>');
-  });
+  // Read file as base64 and POST as URL-encoded form data.
+  // IIS FastCGI does not forward raw binary request bodies to php://input,
+  // so application/x-www-form-urlencoded is the only reliable transport.
+  const reader = new FileReader();
+  reader.onerror = function() { showErr('Could not read the selected file.'); };
+  reader.onload = function(e) {
+    const b64  = e.target.result.split(',')[1]; // strip "data:image/...;base64," prefix
+    const body = 'image_b64=' + encodeURIComponent(b64);
+
+    fetch(uploadUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-TOKEN': csrfToken },
+      body: body,
+    })
+    .then(function(res) {
+      return res.text().then(function(text) { return { status: res.status, text: text }; });
+    })
+    .then(function(resp) {
+      let data;
+      try { data = JSON.parse(resp.text); } catch(e) {
+        showErr('HTTP ' + resp.status + ' — non-JSON response:<br><pre style="font-size:11px;white-space:pre-wrap;max-height:150px;overflow:auto">' + resp.text.substring(0, 500).replace(/</g,'&lt;') + '</pre>');
+        return;
+      }
+      if (data.filename) {
+        pendingInput.value      = data.filename;
+        statusDiv.innerHTML     = '<i class="bi bi-check-circle-fill text-success me-1"></i> Uploaded';
+        statusDiv.className     = 'mt-2 small text-success';
+        preview.src             = e.target.result;
+        prevWrap.style.display  = 'block';
+      } else {
+        showErr(data.error || 'Upload failed.');
+      }
+    })
+    .catch(function(err) {
+      showErr('Network error: ' + err.message);
+    });
+  };
+  reader.readAsDataURL(file);
 });
 </script>
 
