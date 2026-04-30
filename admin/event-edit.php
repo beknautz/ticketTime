@@ -12,6 +12,13 @@ $errors     = [];
 $uploadDir  = BASE_PATH . '/public/assets/uploads/events/';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // TEMP DIAGNOSTIC — writes to public/phptest-out.txt so IIS buffering can't hide the crash
+    $__log = BASE_PATH . '/public/phptest-out.txt';
+    $__t   = function(string $m) use ($__log): void {
+        file_put_contents($__log, date('H:i:s') . " $m\n", FILE_APPEND | LOCK_EX);
+    };
+    file_put_contents($__log, "=== POST " . date('Y-m-d H:i:s') . " ===\n");
+    $__t('A: verifyCsrf');
     verifyCsrf();
 
     $data = [
@@ -78,11 +85,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    $__t('B: validation done, errors=' . count($errors) . ' imageRaw=' . ($imageRaw ? strlen($imageRaw) : 'null') . ' imageExt=' . ($imageExt ?? 'null'));
     if (!$errors) {
+        $__t('C: mkdir uploadDir');
         if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
+            $mkOk = mkdir($uploadDir, 0755, true);
+            $__t('C1: mkdir result=' . ($mkOk ? 'ok' : 'FAILED'));
+        } else {
+            $__t('C1: dir already exists');
         }
 
+        $__t('D: save event');
         if ($isNew) {
             $id    = $eventModel->create($data);
             $event = $eventModel->getById($id);
@@ -91,9 +104,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $eventModel->update($id, $data);
             $event = $eventModel->getById($id);
         }
+        $__t('E: event saved id=' . $id);
 
         // Remove image if requested
         if (!empty($_POST['remove_image']) && !empty($event['event_image'])) {
+            $__t('F: removing old image');
             $old = $uploadDir . basename($event['event_image']);
             if (file_exists($old)) unlink($old);
             $eventModel->updateImage($id, null);
@@ -102,16 +117,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Write decoded image directly — no temp file involved
         if ($imageRaw !== null && empty($_POST['remove_image'])) {
+            $__t('G: writing image len=' . strlen($imageRaw) . ' ext=' . $imageExt);
             if (!empty($event['event_image'])) {
                 $old = $uploadDir . basename($event['event_image']);
                 if (file_exists($old)) unlink($old);
             }
-            $name = 'event-' . $id . '-' . bin2hex(random_bytes(6)) . '.' . $imageExt;
-            file_put_contents($uploadDir . $name, $imageRaw);
+            $__t('H: calling random_bytes');
+            $randHex = bin2hex(random_bytes(6));
+            $__t('I: random_bytes OK=' . $randHex);
+            $name = 'event-' . $id . '-' . $randHex . '.' . $imageExt;
+            $__t('J: file_put_contents path=' . $uploadDir . $name);
+            $wrote = file_put_contents($uploadDir . $name, $imageRaw);
+            $__t('K: file_put_contents result=' . var_export($wrote, true));
             $eventModel->updateImage($id, $name);
+            $__t('L: updateImage done');
             $event = $eventModel->getById($id);
         }
 
+        $__t('M: flashMessage + redirect');
         flashMessage('success', 'Event saved!');
         redirect(SITE_URL . '/admin/event-edit.php?id=' . $id);
     }
