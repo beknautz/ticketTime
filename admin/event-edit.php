@@ -30,18 +30,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$data['event_start']) $errors[] = 'Event start date is required';
     if (!$data['event_end'])   $errors[] = 'Event end date is required';
 
-    // Validate image if provided
-    $newImageFile = $_FILES['event_image'] ?? null;
-    if ($newImageFile && $newImageFile['error'] === UPLOAD_ERR_OK) {
-        $allowed = ['image/jpeg', 'image/png', 'image/webp'];
-        $finfo   = finfo_open(FILEINFO_MIME_TYPE);
-        $mime    = finfo_file($finfo, $newImageFile['tmp_name']);
-        finfo_close($finfo);
-
-        if (!in_array($mime, $allowed, true)) {
-            $errors[] = 'Banner image must be JPEG, PNG, or WebP.';
-        } elseif ($newImageFile['size'] > 10 * 1024 * 1024) {
-            $errors[] = 'Banner image must be under 10 MB.';
+    // Validate base64 image (no temp file needed — avoids upload_tmp_dir restriction)
+    $imageRaw   = null;
+    $imageExt   = null;
+    $imageB64   = trim($_POST['image_base64'] ?? '');
+    if ($imageB64 !== '') {
+        if (!preg_match('/^data:(image\/(?:jpeg|png|webp));base64,(.+)$/s', $imageB64, $m)) {
+            $errors[] = 'Invalid image format. Please select a JPEG, PNG, or WebP file.';
+        } else {
+            $imageRaw = base64_decode($m[2], strict: true);
+            if ($imageRaw === false) {
+                $errors[] = 'Image data is corrupted. Please try again.';
+                $imageRaw = null;
+            } elseif (strlen($imageRaw) > 8 * 1024 * 1024) {
+                $errors[] = 'Image must be under 8 MB.';
+                $imageRaw = null;
+            } else {
+                // Verify actual bytes, not just the declared MIME
+                $finfo    = finfo_open(FILEINFO_MIME_TYPE);
+                $realMime = finfo_buffer($finfo, $imageRaw);
+                finfo_close($finfo);
+                $allowed  = ['image/jpeg', 'image/png', 'image/webp'];
+                if (!in_array($realMime, $allowed, true)) {
+                    $errors[] = 'Invalid image type detected.';
+                    $imageRaw = null;
+                } else {
+                    $imageExt = match($realMime) { 'image/png' => 'png', 'image/webp' => 'webp', default => 'jpg' };
+                }
+            }
         }
     }
 
@@ -67,25 +83,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $event = $eventModel->getById($id);
         }
 
-        // Save new upload
-        if ($newImageFile && $newImageFile['error'] === UPLOAD_ERR_OK && empty($_POST['remove_image'])) {
-            // Delete old image first
+        // Write decoded image directly — no temp file involved
+        if ($imageRaw !== null && empty($_POST['remove_image'])) {
             if (!empty($event['event_image'])) {
                 $old = $uploadDir . basename($event['event_image']);
                 if (file_exists($old)) unlink($old);
             }
-
-            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $mime  = finfo_file($finfo, $newImageFile['tmp_name']);
-            finfo_close($finfo);
-            $ext  = match($mime) { 'image/png' => 'png', 'image/webp' => 'webp', default => 'jpg' };
-            $name = 'event-' . $id . '-' . bin2hex(random_bytes(6)) . '.' . $ext;
-            move_uploaded_file($newImageFile['tmp_name'], $uploadDir . $name);
+            $name = 'event-' . $id . '-' . bin2hex(random_bytes(6)) . '.' . $imageExt;
+            file_put_contents($uploadDir . $name, $imageRaw);
             $eventModel->updateImage($id, $name);
             $event = $eventModel->getById($id);
         }
 
-        flashMessage('success', $isNew ? 'Event created!' : 'Event updated!');
+        flashMessage('success', 'Event saved!');
         redirect(SITE_URL . '/admin/event-edit.php?id=' . $id);
     }
 }
@@ -108,8 +118,11 @@ require_once __DIR__ . '/includes/admin-header.php';
   </div>
 <?php endif; ?>
 
-<form method="post" enctype="multipart/form-data" class="row g-4">
+<!-- No enctype="multipart/form-data" — image is submitted as base64 POST field -->
+<form method="post" class="row g-4">
   <?= csrfField() ?>
+  <!-- Hidden field that holds the base64-encoded image -->
+  <input type="hidden" name="image_base64" id="imageBase64">
 
   <div class="col-md-8">
     <div class="card shadow-sm">
@@ -152,35 +165,31 @@ require_once __DIR__ . '/includes/admin-header.php';
       <div class="card-body">
 
         <?php if (!empty($event['event_image'])): ?>
-          <div class="mb-3" id="currentImageWrap">
+          <div class="mb-3">
             <img src="<?= SITE_URL ?>/public/assets/uploads/events/<?= e($event['event_image']) ?>"
-                 class="img-fluid rounded mb-2" style="width:100%;height:140px;object-fit:cover"
-                 alt="Current banner">
+                 class="img-fluid rounded mb-2"
+                 style="width:100%;height:130px;object-fit:cover" alt="Current banner">
             <div class="form-check">
               <input class="form-check-input" type="checkbox" name="remove_image" id="removeImage" value="1">
-              <label class="form-check-label text-danger small" for="removeImage">
-                Remove current image
-              </label>
+              <label class="form-check-label text-danger small" for="removeImage">Remove current image</label>
             </div>
           </div>
         <?php endif; ?>
 
-        <div>
-          <label class="form-label fw-semibold small">
-            <?= !empty($event['event_image']) ? 'Replace with new image' : 'Upload banner image' ?>
-          </label>
-          <input type="file" name="event_image" id="eventImageInput"
-                 class="form-control form-control-sm"
-                 accept="image/jpeg,image/png,image/webp">
-          <div class="form-text">JPEG, PNG or WebP · max 10 MB<br>Recommended: 1600×600 px or wider</div>
-        </div>
+        <label class="form-label fw-semibold small">
+          <?= !empty($event['event_image']) ? 'Replace with new image' : 'Upload banner image' ?>
+        </label>
+        <input type="file" id="eventImageInput" class="form-control form-control-sm"
+               accept="image/jpeg,image/png,image/webp">
+        <div class="form-text">JPEG, PNG or WebP · max 8 MB<br>Recommended: 1600 × 600 px or wider</div>
 
-        <!-- Live preview of selected file -->
         <div id="imagePreviewWrap" class="mt-3" style="display:none">
           <p class="small fw-semibold mb-1 text-muted">Preview:</p>
           <img id="imagePreview" src="" alt="Preview"
-               class="img-fluid rounded" style="width:100%;height:140px;object-fit:cover">
+               class="img-fluid rounded" style="width:100%;height:130px;object-fit:cover">
+          <p class="text-success small mt-1 mb-0"><i class="bi bi-check-circle me-1"></i>Ready to save</p>
         </div>
+        <div id="imageError" class="text-danger small mt-2" style="display:none"></div>
       </div>
     </div>
 
@@ -252,16 +261,39 @@ document.getElementById('eventSlug').addEventListener('input', function() {
   this.dataset.manual = 'true';
 });
 
-// Live image preview
+// Encode selected image as base64 into hidden field — no temp file on server
 document.getElementById('eventImageInput').addEventListener('change', function() {
-  const wrap    = document.getElementById('imagePreviewWrap');
-  const preview = document.getElementById('imagePreview');
-  if (this.files && this.files[0]) {
-    preview.src = URL.createObjectURL(this.files[0]);
-    wrap.style.display = 'block';
-  } else {
-    wrap.style.display = 'none';
+  const errDiv   = document.getElementById('imageError');
+  const prevWrap = document.getElementById('imagePreviewWrap');
+  const preview  = document.getElementById('imagePreview');
+  const hidden   = document.getElementById('imageBase64');
+  const file     = this.files[0];
+
+  errDiv.style.display   = 'none';
+  prevWrap.style.display = 'none';
+  hidden.value           = '';
+
+  if (!file) return;
+
+  const maxBytes = 8 * 1024 * 1024;
+  if (file.size > maxBytes) {
+    errDiv.textContent  = 'Image must be under 8 MB. Please choose a smaller file.';
+    errDiv.style.display = 'block';
+    this.value = '';
+    return;
   }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    hidden.value           = e.target.result; // data:image/jpeg;base64,...
+    preview.src            = e.target.result;
+    prevWrap.style.display = 'block';
+  };
+  reader.onerror = function() {
+    errDiv.textContent   = 'Could not read file. Please try again.';
+    errDiv.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
 });
 </script>
 
