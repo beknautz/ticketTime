@@ -1,71 +1,59 @@
 <?php
 // Diagnostic test — DELETE AFTER USE
+echo "Step 1: PHP running " . PHP_VERSION . "<br>\n"; flush();
+
 require_once dirname(__DIR__) . '/config/config.php';
-require_once BASE_PATH . '/includes/auth.php';
+echo "Step 2: config.php OK<br>\n"; flush();
 
 $eventModel = new Event();
 $event = $eventModel->getById(3);
+echo "Step 3: getById(3) = " . ($event ? $event['event_name'] : 'NOT FOUND') . "<br>\n"; flush();
 
-// Write steps to a log file AND output them — this bypasses IIS output buffering issues
-$log = BASE_PATH . '/storage/logs/phptest_' . date('His') . '.txt';
-$steps = [];
+echo "Step 4: event_start=" . var_export($event['event_start'] ?? null, true) . "<br>\n"; flush();
+echo "Step 5: event_end=" . var_export($event['event_end'] ?? null, true) . "<br>\n"; flush();
+echo "Step 6: sale_start=" . var_export($event['sale_start'] ?? null, true) . "<br>\n"; flush();
+echo "Step 7: sale_end=" . var_export($event['sale_end'] ?? null, true) . "<br>\n"; flush();
+echo "Step 8: event_image=" . var_export($event['event_image'] ?? null, true) . "<br>\n"; flush();
+echo "Step 9: status=" . var_export($event['status'] ?? null, true) . "<br>\n"; flush();
 
-function step(int $n, string $msg) use (&$steps, $log) {
-    $steps[] = "Step $n: $msg";
-    @file_put_contents($log, implode("\n", $steps), LOCK_EX);
-    echo "Step $n: $msg<br>\n";
-    flush();
-}
-
-step(1, 'event loaded: ' . ($event ? $event['event_name'] : 'NOT FOUND'));
-step(2, 'event_start=' . var_export($event['event_start'] ?? null, true));
-step(3, 'event_end=' . var_export($event['event_end'] ?? null, true));
-step(4, 'sale_start=' . var_export($event['sale_start'] ?? null, true));
-step(5, 'sale_end=' . var_export($event['sale_end'] ?? null, true));
-step(6, 'event_image=' . var_export($event['event_image'] ?? null, true));
-step(7, 'status=' . var_export($event['status'] ?? null, true));
-step(8, 'event_description length=' . strlen($event['event_description'] ?? ''));
-
-step(9, 'testing e() on event_name...');
+echo "Step 10: testing e(event_name)...<br>\n"; flush();
 $_ = htmlspecialchars($event['event_name'] ?? '', ENT_QUOTES, 'UTF-8');
-step(10, 'e(event_name) OK');
+echo "Step 11: OK — $_ <br>\n"; flush();
 
-step(11, 'testing strtotime(event_start)...');
+echo "Step 12: testing strtotime(event_start)...<br>\n"; flush();
 $ts = strtotime($event['event_start'] ?? '');
-step(12, 'strtotime OK: ' . var_export($ts, true));
+echo "Step 13: strtotime = " . var_export($ts, true) . "<br>\n"; flush();
 
-step(13, 'testing date() on event_start...');
+echo "Step 14: testing date(event_start)...<br>\n"; flush();
 $d = $ts ? date('Y-m-d\TH:i', $ts) : '';
-step(14, 'date OK: ' . $d);
+echo "Step 15: date = $d<br>\n"; flush();
 
-step(15, 'testing e() on date result...');
-$_ = htmlspecialchars($d, ENT_QUOTES, 'UTF-8');
-step(16, 'e(date) OK');
-
-step(17, 'testing sale_start conditional...');
+echo "Step 16: testing sale_start block...<br>\n"; flush();
 $_ = ($event && $event['sale_start']) ? date('Y-m-d\TH:i', strtotime($event['sale_start'])) : '';
-step(18, 'sale_start OK: ' . $_);
+echo "Step 17: sale_start = $_<br>\n"; flush();
 
-step(19, 'testing sale_end conditional...');
+echo "Step 18: testing sale_end block...<br>\n"; flush();
 $_ = ($event && $event['sale_end']) ? date('Y-m-d\TH:i', strtotime($event['sale_end'])) : '';
-step(20, 'sale_end OK: ' . $_);
+echo "Step 19: sale_end = $_<br>\n"; flush();
 
-step(21, 'testing event_image block...');
+echo "Step 20: testing event_image block...<br>\n"; flush();
 if (!empty($event['event_image'])) {
-    $_ = htmlspecialchars($event['event_image'], ENT_QUOTES, 'UTF-8');
-    step(22, 'event_image e() OK: ' . $_);
+    echo "Step 21: image exists: " . htmlspecialchars($event['event_image'], ENT_QUOTES, 'UTF-8') . "<br>\n";
 } else {
-    step(22, 'event_image empty/null — skipped');
+    echo "Step 21: no image<br>\n";
 }
+flush();
 
-step(23, 'testing status select loop...');
+echo "Step 22: testing status loop...<br>\n"; flush();
 foreach (['draft', 'active', 'closed', 'archived'] as $s) {
     $selected = ($event['status'] ?? 'draft') === $s ? 'selected' : '';
 }
-step(24, 'status loop OK');
+echo "Step 23: status loop OK<br>\n"; flush();
 
-step(25, 'including admin-footer...');
+echo "Step 24: including admin-header...<br>\n"; flush();
+$pageTitle = 'Diagnostic';
+require_once __DIR__ . '/includes/admin-header.php';
+echo "<p>Step 25: admin-header OK</p>\n"; flush();
+
+echo "<p>Step 26: including admin-footer...</p>\n"; flush();
 require_once __DIR__ . '/includes/admin-footer.php';
-// footer outputs </body></html> etc — reaching here means footer is fine
-
-step(26, 'COMPLETE — all sections passed');
