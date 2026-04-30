@@ -63,7 +63,15 @@ ulog('dir_writable=' . (is_writable($uploadDir) ? 'yes' : 'no'));
 // Read raw bytes — no temp file involved
 ulog('reading php://input');
 $imageRaw = file_get_contents('php://input', false, null, 0, $maxBytes + 1);
-ulog('read bytes=' . (is_string($imageRaw) ? strlen($imageRaw) : 'false'));
+$readBytes = is_string($imageRaw) ? strlen($imageRaw) : 'false';
+ulog('read bytes=' . $readBytes);
+if ($readBytes === 0) {
+    // Try alternative: fopen stream
+    $fh = fopen('php://input', 'rb');
+    $imageRaw = $fh ? stream_get_contents($fh) : '';
+    if ($fh) fclose($fh);
+    ulog('fopen fallback bytes=' . strlen($imageRaw));
+}
 
 if ($imageRaw === false || strlen($imageRaw) === 0) {
     ulog('no data');

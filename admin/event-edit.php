@@ -279,7 +279,7 @@ document.getElementById('eventImageInput').addEventListener('change', function()
 
   fetch(uploadUrl, {
     method: 'POST',
-    headers: { 'Content-Type': file.type || 'application/octet-stream', 'X-CSRF-TOKEN': csrfToken },
+    headers: { 'Content-Type': 'application/octet-stream', 'X-CSRF-TOKEN': csrfToken },
     body: file,
   })
   .then(function(res) {
