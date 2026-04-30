@@ -24,6 +24,9 @@ ulog('=== upload-image.php START ===');
 ulog('method=' . ($_SERVER['REQUEST_METHOD'] ?? '?'));
 ulog('content-type=' . ($_SERVER['CONTENT_TYPE'] ?? '?'));
 ulog('content-length=' . ($_SERVER['CONTENT_LENGTH'] ?? '?'));
+ulog('post_max_size=' . ini_get('post_max_size'));
+ulog('upload_max_filesize=' . ini_get('upload_max_filesize'));
+ulog('memory_limit=' . ini_get('memory_limit'));
 
 require_once dirname(__DIR__) . '/config/config.php';
 ulog('config ok');
