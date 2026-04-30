@@ -269,11 +269,20 @@ document.getElementById('eventImageInput').addEventListener('change', function()
 
   fetch('<?= SITE_URL ?>/admin/upload-image.php', {
     method: 'POST',
-    headers: { 'Content-Type': file.type, 'X-CSRF-TOKEN': csrfToken },
+    headers: { 'Content-Type': file.type || 'application/octet-stream', 'X-CSRF-TOKEN': csrfToken },
     body: file,
   })
-  .then(function(res) { return res.json(); })
-  .then(function(data) {
+  .then(function(res) {
+    return res.text().then(function(text) { return { status: res.status, text: text }; });
+  })
+  .then(function(resp) {
+    let data;
+    try { data = JSON.parse(resp.text); } catch(e) {
+      errDiv.textContent      = 'Server error (' + resp.status + '): ' + resp.text.substring(0, 300);
+      errDiv.style.display    = 'block';
+      statusDiv.style.display = 'none';
+      return;
+    }
     if (data.filename) {
       pendingInput.value      = data.filename;
       statusDiv.innerHTML     = '<i class="bi bi-check-circle-fill text-success me-1"></i> Uploaded';
@@ -290,8 +299,8 @@ document.getElementById('eventImageInput').addEventListener('change', function()
       statusDiv.style.display = 'none';
     }
   })
-  .catch(function() {
-    errDiv.textContent      = 'Upload failed. Please try again.';
+  .catch(function(err) {
+    errDiv.textContent      = 'Network error: ' + err.message;
     errDiv.style.display    = 'block';
     statusDiv.style.display = 'none';
   });
