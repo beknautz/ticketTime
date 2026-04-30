@@ -25,7 +25,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verifyCsrf();
     $action = $_POST['action'] ?? '';
 
-    if ($action === 'create' || $action === 'update') {
+    if ($action === 'delete') {
+        $err = $ttModel->delete((int)($_POST['ticket_type_id'] ?? 0));
+        if ($err) {
+            $error = $err;
+        } else {
+            $success = 'Ticket type deleted.';
+        }
+    } elseif ($action === 'create' || $action === 'update') {
         $data = [
             'event_id'           => $eventId,
             'ticket_name'        => trim($_POST['ticket_name'] ?? ''),
@@ -51,6 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+
 
 $ticketTypes = $eventModel->getTicketTypes($eventId);
 
@@ -101,7 +109,7 @@ require_once __DIR__ . '/includes/admin-header.php';
                 <div class="fw-bold"><?= (int)$tt['quantity_sold'] ?> / <?= (int)$tt['quantity_available'] ?></div>
               </div>
             </div>
-            <div class="mt-3">
+            <div class="mt-3 d-flex align-items-center gap-2 flex-wrap">
               <form method="post" class="d-inline">
                 <?= csrfField() ?>
                 <input type="hidden" name="action" value="update">
@@ -113,12 +121,17 @@ require_once __DIR__ . '/includes/admin-header.php';
                 <input type="hidden" name="quantity_available" value="<?= (int)$tt['quantity_available'] ?>">
                 <input type="hidden" name="max_per_order" value="<?= (int)$tt['max_per_order'] ?>">
                 <input type="hidden" name="sort_order" value="<?= (int)$tt['sort_order'] ?>">
-                <select name="status" class="form-select form-select-sm d-inline-block w-auto me-2" onchange="this.form.submit()">
+                <select name="status" class="form-select form-select-sm d-inline-block w-auto" onchange="this.form.submit()">
                   <?php foreach (['active', 'inactive', 'sold_out'] as $s): ?>
                     <option value="<?= $s ?>" <?= $tt['status'] === $s ? 'selected' : '' ?>><?= ucfirst(str_replace('_', ' ', $s)) ?></option>
                   <?php endforeach; ?>
                 </select>
               </form>
+              <button type="button"
+                      class="btn btn-outline-danger btn-sm"
+                      onclick="confirmDeleteTT(<?= (int)$tt['ticket_type_id'] ?>, <?= htmlspecialchars(json_encode($tt['ticket_name']), ENT_QUOTES) ?>, <?= (int)$tt['quantity_sold'] ?>)">
+                <i class="bi bi-trash me-1"></i>Delete
+              </button>
             </div>
           </div>
         </div>
@@ -182,4 +195,50 @@ require_once __DIR__ . '/includes/admin-header.php';
     </div>
   </div>
 </div>
+<!-- Hidden delete form -->
+<form id="deleteTTForm" method="post" style="display:none">
+  <?= csrfField() ?>
+  <input type="hidden" name="action" value="delete">
+  <input type="hidden" name="ticket_type_id" id="deleteTTId">
+</form>
+
+<!-- Confirmation modal -->
+<div class="modal fade" id="deleteTTModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Delete Ticket Type</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>Delete <strong id="deleteTTName"></strong>?</p>
+        <p class="text-muted small mb-0" id="deleteTTWarning"></p>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteTTBtn">
+          <i class="bi bi-trash me-1"></i>Delete
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function confirmDeleteTT(id, name, sold) {
+  if (sold > 0) {
+    alert('Cannot delete "' + name + '" — ' + sold + ' ticket(s) have already been sold. Set it to Inactive instead.');
+    return;
+  }
+  document.getElementById('deleteTTId').value  = id;
+  document.getElementById('deleteTTName').textContent = name;
+  document.getElementById('deleteTTWarning').textContent =
+    'This permanently removes the ticket type. This cannot be undone.';
+  document.getElementById('confirmDeleteTTBtn').onclick = function() {
+    document.getElementById('deleteTTForm').submit();
+  };
+  new bootstrap.Modal(document.getElementById('deleteTTModal')).show();
+}
+</script>
+
 <?php require_once __DIR__ . '/includes/admin-footer.php'; ?>

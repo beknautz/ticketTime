@@ -99,6 +99,21 @@ class TicketType
         return $upd->execute(['sold' => $newSold, 'status' => $newStatus, 'id' => $id]);
     }
 
+    public function delete(int $id): string
+    {
+        $tt = $this->getById($id);
+        if (!$tt) return 'Ticket type not found.';
+
+        $sold = (int)$tt['quantity_sold'];
+        if ($sold > 0) {
+            return "Cannot delete: {$sold} ticket(s) already sold for this type. Set it to Inactive instead.";
+        }
+
+        $this->db->prepare("DELETE FROM order_items WHERE ticket_type_id = ?")->execute([$id]);
+        $this->db->prepare("DELETE FROM ticket_types WHERE ticket_type_id = ?")->execute([$id]);
+        return '';
+    }
+
     public function releaseQuantity(int $id, int $qty): void
     {
         $this->db->prepare("

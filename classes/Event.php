@@ -117,6 +117,42 @@ class Event
                  ->execute([$filename, $id]);
     }
 
+    public function delete(int $id): string
+    {
+        // Block delete if any paid orders exist — archive the event instead
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM orders WHERE event_id = ? AND status = 'paid'");
+        $stmt->execute([$id]);
+        $paid = (int)$stmt->fetchColumn();
+        if ($paid > 0) {
+            return "Cannot delete: {$paid} paid order(s) exist for this event. Set the status to Archived instead.";
+        }
+
+        $this->db->beginTransaction();
+        try {
+            // Cascade in FK order
+            $this->db->prepare("
+                DELETE ts FROM ticket_scans ts
+                JOIN tickets t ON t.ticket_id = ts.ticket_id
+                WHERE t.event_id = ?
+            ")->execute([$id]);
+            $this->db->prepare("DELETE FROM tickets WHERE event_id = ?")->execute([$id]);
+            $this->db->prepare("
+                DELETE oi FROM order_items oi
+                JOIN orders o ON o.order_id = oi.order_id
+                WHERE o.event_id = ?
+            ")->execute([$id]);
+            $this->db->prepare("DELETE FROM orders WHERE event_id = ?")->execute([$id]);
+            $this->db->prepare("DELETE FROM ticket_types WHERE event_id = ?")->execute([$id]);
+            $this->db->prepare("DELETE FROM events WHERE event_id = ?")->execute([$id]);
+            $this->db->commit();
+            return '';
+        } catch (\Throwable $e) {
+            $this->db->rollBack();
+            Logger::error('Event delete failed', ['event_id' => $id, 'error' => $e->getMessage()]);
+            return 'Delete failed. Please try again.';
+        }
+    }
+
     public function getTicketTypes(int $eventId, bool $activeOnly = false): array
     {
         $sql = "SELECT * FROM ticket_types WHERE event_id = ?";
