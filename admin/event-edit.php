@@ -30,15 +30,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$data['event_start']) $errors[] = 'Event start date is required';
     if (!$data['event_end'])   $errors[] = 'Event end date is required';
 
-    // Validate base64 image (no temp file needed — avoids upload_tmp_dir restriction)
+    // Validate base64 image — avoid regex on multi-MB string (causes PCRE crash on IIS)
     $imageRaw   = null;
     $imageExt   = null;
     $imageB64   = trim($_POST['image_base64'] ?? '');
     if ($imageB64 !== '') {
-        if (!preg_match('/^data:(image\/(?:jpeg|png|webp));base64,(.+)$/s', $imageB64, $m)) {
+        // Parse the data URI with string functions, not regex, to avoid PCRE on large data
+        $commaPos = strpos($imageB64, ',');
+        $header   = $commaPos !== false ? substr($imageB64, 0, $commaPos) : '';
+        // header looks like: data:image/jpeg;base64
+        $mimeMap  = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+        $detectedMime = '';
+        foreach (array_keys($mimeMap) as $mime) {
+            if ($header === 'data:' . $mime . ';base64') {
+                $detectedMime = $mime;
+                break;
+            }
+        }
+
+        if (!$detectedMime || $commaPos === false) {
             $errors[] = 'Invalid image format. Please select a JPEG, PNG, or WebP file.';
         } else {
-            $imageRaw = base64_decode($m[2], true);
+            $b64data  = substr($imageB64, $commaPos + 1);
+            $imageRaw = base64_decode($b64data, true);
             if ($imageRaw === false) {
                 $errors[] = 'Image data is corrupted. Please try again.';
                 $imageRaw = null;
@@ -46,14 +60,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $errors[] = 'Image must be under 8 MB.';
                 $imageRaw = null;
             } else {
-                // Verify actual image bytes using getimagesizefromstring (no fileinfo ext needed)
-                $info = @getimagesizefromstring($imageRaw);
-                $mimeMap = [IMAGETYPE_JPEG => 'jpg', IMAGETYPE_PNG => 'png', IMAGETYPE_WEBP => 'webp'];
-                if (!$info || !isset($mimeMap[$info[2]])) {
-                    $errors[] = 'Invalid image type detected. Please use JPEG, PNG, or WebP.';
+                // Verify magic bytes to confirm the file matches its declared type
+                $magic   = substr($imageRaw, 0, 12);
+                $isJpeg  = (substr($magic, 0, 2) === "\xFF\xD8");
+                $isPng   = (substr($magic, 0, 8) === "\x89PNG\r\n\x1a\n");
+                $isWebp  = (substr($magic, 0, 4) === 'RIFF' && substr($magic, 8, 4) === 'WEBP');
+                $typeOk  = ($detectedMime === 'image/jpeg' && $isJpeg)
+                        || ($detectedMime === 'image/png'  && $isPng)
+                        || ($detectedMime === 'image/webp' && $isWebp);
+                if (!$typeOk) {
+                    $errors[] = 'Image content does not match its declared type.';
                     $imageRaw = null;
                 } else {
-                    $imageExt = $mimeMap[$info[2]];
+                    $imageExt = $mimeMap[$detectedMime];
                 }
             }
         }
