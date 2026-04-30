@@ -54,6 +54,9 @@ spl_autoload_register(function (string $class): void {
     }
 });
 
+// ── Error handler (must load before anything that can throw) ─────────────────
+require_once BASE_PATH . '/includes/error-handler.php';
+
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 require_once BASE_PATH . '/config/database.php';
 require_once BASE_PATH . '/config/stripe.php';
