@@ -41,7 +41,7 @@ if (!$qrToken || $eventId <= 0) {
 }
 
 // Strip URL prefix if a full URL was scanned (e.g. from a QR containing the full ticket URL)
-if (str_contains($qrToken, 'token=')) {
+if (strpos($qrToken, 'token=') !== false) {
     parse_str(parse_url($qrToken, PHP_URL_QUERY) ?: '', $qs);
     $qrToken = $qs['token'] ?? $qrToken;
 }

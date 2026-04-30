@@ -55,7 +55,7 @@ class QRCode
     public function generateBase64(string $data, string $filename): string
     {
         $path = $this->generate($data, $filename);
-        if (str_ends_with($path, '.svg')) {
+        if (substr($path, -4) === '.svg') {
             return 'data:image/svg+xml;base64,' . base64_encode(file_get_contents($path));
         }
         return 'data:image/png;base64,' . base64_encode(file_get_contents($path));

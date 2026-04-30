@@ -82,7 +82,7 @@ $pageTitle = $pageTitle ?? 'Admin';
           if ($file === '__sep__'):
       ?>
           <li class="nav-item mt-2"><small class="text-muted px-3 opacity-50 text-uppercase small">Operations</small></li>
-      <?php elseif (str_starts_with($file, '__link__')):
+      <?php elseif (strncmp($file, '__link__', 8) === 0):
           $link = substr($file, 8);
       ?>
           <li class="nav-item">
