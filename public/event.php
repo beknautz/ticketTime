@@ -46,7 +46,7 @@ require_once BASE_PATH . '/includes/nav.php';
     <div class="col-md-8">
       <?php if (!empty($event['event_image'])): ?>
         <div class="event-banner-img mb-4">
-          <img src="<?= SITE_URL ?>/public/assets/img/events/<?= e($event['event_image']) ?>"
+          <img src="<?= SITE_URL ?>/public/assets/uploads/events/<?= e($event['event_image']) ?>"
                alt="<?= e($event['event_name']) ?>">
         </div>
       <?php else: ?>

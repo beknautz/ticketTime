@@ -9,7 +9,7 @@ $id         = (int)($_GET['id'] ?? 0);
 $event      = $id ? $eventModel->getById($id) : null;
 $isNew      = !$event;
 $errors     = [];
-$uploadDir  = BASE_PATH . '/public/assets/img/events/';
+$uploadDir  = BASE_PATH . '/public/assets/uploads/events/';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verifyCsrf();
@@ -142,7 +142,7 @@ require_once __DIR__ . '/includes/admin-header.php';
 
         <?php if (!empty($event['event_image'])): ?>
           <div class="mb-3">
-            <img src="<?= SITE_URL ?>/public/assets/img/events/<?= e($event['event_image']) ?>"
+            <img src="<?= SITE_URL ?>/public/assets/uploads/events/<?= e($event['event_image']) ?>"
                  class="img-fluid rounded mb-2"
                  style="width:100%;height:130px;object-fit:cover" alt="Current banner">
             <div class="form-check">

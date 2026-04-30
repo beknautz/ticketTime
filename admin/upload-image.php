@@ -55,7 +55,7 @@ if (!hash_equals(csrfToken(), $token)) {
 ulog('csrf ok');
 
 $maxBytes  = 8 * 1024 * 1024;
-$uploadDir = BASE_PATH . '/public/assets/img/events/';
+$uploadDir = BASE_PATH . '/public/assets/uploads/events/';
 ulog('uploadDir=' . $uploadDir);
 ulog('dir_exists=' . (is_dir($uploadDir) ? 'yes' : 'no'));
 ulog('dir_writable=' . (is_writable($uploadDir) ? 'yes' : 'no'));
