@@ -30,15 +30,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$data['event_start']) $errors[] = 'Event start date is required';
     if (!$data['event_end'])   $errors[] = 'Event end date is required';
 
-    // Image is pre-uploaded via AJAX to upload-image.php; pending_image holds the filename
-    $pendingImage = '';
-    if (!empty($_POST['pending_image'])) {
-        $candidate = basename($_POST['pending_image']);
-        if (preg_match('/^event-[0-9a-f]{16}\.(jpg|png|webp)$/', $candidate)
-            && file_exists($uploadDir . $candidate)) {
-            $pendingImage = $candidate;
+    $imageFile = $_FILES['event_image'] ?? null;
+    $hasUpload = $imageFile && $imageFile['error'] !== UPLOAD_ERR_NO_FILE;
+
+    if ($hasUpload) {
+        if ($imageFile['error'] !== UPLOAD_ERR_OK) {
+            $uploadErrors = [
+                UPLOAD_ERR_INI_SIZE   => 'File exceeds server upload limit.',
+                UPLOAD_ERR_FORM_SIZE  => 'File exceeds form upload limit.',
+                UPLOAD_ERR_PARTIAL    => 'File was only partially uploaded.',
+                UPLOAD_ERR_NO_TMP_DIR => 'Server temporary directory is missing.',
+                UPLOAD_ERR_CANT_WRITE => 'Server could not write the uploaded file.',
+                UPLOAD_ERR_EXTENSION  => 'Upload blocked by server extension.',
+            ];
+            $errors[] = $uploadErrors[$imageFile['error']] ?? 'Upload error code ' . $imageFile['error'];
+        } elseif ($imageFile['size'] > 8 * 1024 * 1024) {
+            $errors[] = 'Image must be under 8 MB.';
         } else {
-            $errors[] = 'Uploaded image not found. Please try uploading again.';
+            $allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+            if (!in_array(mime_content_type($imageFile['tmp_name']), $allowedTypes, true)) {
+                $errors[] = 'Please upload a JPEG, PNG, or WebP image.';
+            }
         }
     }
 
@@ -56,7 +68,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $event = $eventModel->getById($id);
         }
 
-        // Remove image if requested
         if (!empty($_POST['remove_image']) && !empty($event['event_image'])) {
             $old = $uploadDir . basename($event['event_image']);
             if (file_exists($old)) unlink($old);
@@ -64,18 +75,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $event = $eventModel->getById($id);
         }
 
-        // Link the pre-uploaded image to this event record
-        if ($pendingImage && empty($_POST['remove_image'])) {
+        if ($hasUpload && $imageFile['error'] === UPLOAD_ERR_OK && empty($_POST['remove_image'])) {
             if (!empty($event['event_image'])) {
                 $old = $uploadDir . basename($event['event_image']);
                 if (file_exists($old)) unlink($old);
             }
-            $eventModel->updateImage($id, $pendingImage);
-            $event = $eventModel->getById($id);
+            $ext  = match(mime_content_type($imageFile['tmp_name'])) {
+                'image/png'  => 'png',
+                'image/webp' => 'webp',
+                default      => 'jpg',
+            };
+            $name = 'event-' . $id . '-' . bin2hex(random_bytes(6)) . '.' . $ext;
+            if (move_uploaded_file($imageFile['tmp_name'], $uploadDir . $name)) {
+                $eventModel->updateImage($id, $name);
+                $event = $eventModel->getById($id);
+            } else {
+                $errors[] = 'Failed to save uploaded image.';
+            }
         }
 
-        flashMessage('success', 'Event saved!');
-        redirect(SITE_URL . '/admin/event-edit.php?id=' . $id);
+        if (!$errors) {
+            flashMessage('success', 'Event saved!');
+            redirect(SITE_URL . '/admin/event-edit.php?id=' . $id);
+        }
     }
 }
 
@@ -97,7 +119,7 @@ require_once __DIR__ . '/includes/admin-header.php';
   </div>
 <?php endif; ?>
 
-<form method="post" class="row g-4">
+<form method="post" enctype="multipart/form-data" class="row g-4">
   <?= csrfField() ?>
 
   <div class="col-md-8">
@@ -135,7 +157,6 @@ require_once __DIR__ . '/includes/admin-header.php';
 
   <div class="col-md-4">
 
-    <!-- Banner Image -->
     <div class="card shadow-sm mb-3">
       <div class="card-header fw-bold"><i class="bi bi-image me-1"></i>Banner Image</div>
       <div class="card-body">
@@ -155,12 +176,9 @@ require_once __DIR__ . '/includes/admin-header.php';
         <label class="form-label fw-semibold small">
           <?= !empty($event['event_image']) ? 'Replace with new image' : 'Upload banner image' ?>
         </label>
-        <input type="hidden" name="pending_image" id="pendingImage" value="">
-        <input type="file" id="eventImageInput" class="form-control form-control-sm"
+        <input type="file" name="event_image" id="eventImageInput" class="form-control form-control-sm"
                accept="image/jpeg,image/png,image/webp">
         <div class="form-text">JPEG, PNG or WebP · max 8 MB<br>Recommended: 1600 × 600 px or wider</div>
-
-        <div id="uploadStatus" class="mt-2" style="display:none"></div>
 
         <div id="imagePreviewWrap" class="mt-3" style="display:none">
           <p class="small fw-semibold mb-1 text-muted">Preview:</p>
@@ -171,7 +189,6 @@ require_once __DIR__ . '/includes/admin-header.php';
       </div>
     </div>
 
-    <!-- Date & Time -->
     <div class="card shadow-sm mb-3">
       <div class="card-header fw-bold">Date &amp; Time</div>
       <div class="card-body">
@@ -199,7 +216,6 @@ require_once __DIR__ . '/includes/admin-header.php';
       </div>
     </div>
 
-    <!-- Status -->
     <div class="card shadow-sm">
       <div class="card-header fw-bold">Status</div>
       <div class="card-body">
@@ -240,17 +256,13 @@ document.getElementById('eventSlug').addEventListener('input', function() {
 });
 
 document.getElementById('eventImageInput').addEventListener('change', function() {
-  const errDiv       = document.getElementById('imageError');
-  const prevWrap     = document.getElementById('imagePreviewWrap');
-  const preview      = document.getElementById('imagePreview');
-  const statusDiv    = document.getElementById('uploadStatus');
-  const pendingInput = document.getElementById('pendingImage');
-  const file         = this.files[0];
+  const errDiv   = document.getElementById('imageError');
+  const prevWrap = document.getElementById('imagePreviewWrap');
+  const preview  = document.getElementById('imagePreview');
+  const file     = this.files[0];
 
-  errDiv.style.display    = 'none';
-  statusDiv.style.display = 'none';
-  prevWrap.style.display  = 'none';
-  pendingInput.value      = '';
+  errDiv.style.display   = 'none';
+  prevWrap.style.display = 'none';
 
   if (!file) return;
 
@@ -261,51 +273,10 @@ document.getElementById('eventImageInput').addEventListener('change', function()
     return;
   }
 
-  statusDiv.innerHTML     = '<span class="spinner-border spinner-border-sm me-1"></span> Uploading…';
-  statusDiv.className     = 'mt-2 text-muted small';
-  statusDiv.style.display = 'block';
-
-  const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-
-  function showErr(msg) {
-    errDiv.innerHTML        = msg;
-    errDiv.style.display    = 'block';
-    statusDiv.style.display = 'none';
-  }
-
   const reader = new FileReader();
-  reader.onerror = function() { showErr('Could not read the selected file.'); };
   reader.onload = function(e) {
-    const b64  = e.target.result.split(',')[1];
-    const body = 'image_b64=' + encodeURIComponent(b64);
-
-    fetch('<?= SITE_URL ?>/admin/upload-image.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-TOKEN': csrfToken },
-      body: body,
-    })
-    .then(function(res) {
-      return res.text().then(function(text) { return { status: res.status, text: text }; });
-    })
-    .then(function(resp) {
-      let data;
-      try { data = JSON.parse(resp.text); } catch(e) {
-        showErr('Server error (' + resp.status + '): ' + resp.text.substring(0, 300).replace(/</g, '&lt;'));
-        return;
-      }
-      if (data.filename) {
-        pendingInput.value     = data.filename;
-        statusDiv.innerHTML    = '<i class="bi bi-check-circle-fill text-success me-1"></i> Uploaded';
-        statusDiv.className    = 'mt-2 small text-success';
-        preview.src            = e.target.result;
-        prevWrap.style.display = 'block';
-      } else {
-        showErr(data.error || 'Upload failed.');
-      }
-    })
-    .catch(function(err) {
-      showErr('Network error: ' + err.message);
-    });
+    preview.src            = e.target.result;
+    prevWrap.style.display = 'block';
   };
   reader.readAsDataURL(file);
 });
