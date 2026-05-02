@@ -1,31 +1,23 @@
-# TicketTime - Root .htaccess
 Options -Indexes
 
-# Block direct access to sensitive directories
 <IfModule mod_rewrite.c>
   RewriteEngine On
 
-  # Protect config directory
+  # Allow Let's Encrypt SSL validation
+  RewriteRule ^\.well-known/acme-challenge/ - [L]
+
+  # Block direct access to sensitive directories
   RewriteRule ^config/ - [F,L]
-
-  # Protect classes directory
   RewriteRule ^classes/ - [F,L]
-
-  # Protect includes directory
   RewriteRule ^includes/ - [F,L]
-
-  # Protect sql directory
   RewriteRule ^sql/ - [F,L]
+  RewriteRule ^storage/ - [F,L]
 
-  # Protect actions from direct browser GET (allow POST from HTMX)
-  # We handle this via PHP logic instead
-
-  # Default redirect to public/index.php
-  RewriteCond %{REQUEST_URI} ^/$
-  RewriteRule ^ /public/index.php [L,R=301]
+  # Rewrite root URL to public index
+  RewriteRule ^$ public/index.php [L]
 </IfModule>
 
-# Deny access to .env files
+# Deny access to dotfiles (.env, .git, .htaccess, etc.)
 <FilesMatch "^\.">
   Order allow,deny
   Deny from all
@@ -35,6 +27,5 @@ Options -Indexes
 <IfModule mod_headers.c>
   Header always set X-Content-Type-Options "nosniff"
   Header always set X-Frame-Options "SAMEORIGIN"
-  Header always set X-XSS-Protection "1; mode=block"
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
 </IfModule>
