@@ -6,11 +6,28 @@ $eventModel = new Event();
 $events     = $eventModel->getActive();
 
 $pageTitle = 'Home';
+
+$heroFiles = glob(BASE_PATH . '/public/assets/img/hero.*') ?: [];
+$heroFile  = !empty($heroFiles) ? basename($heroFiles[0]) : null;
+
 require_once BASE_PATH . '/includes/header.php';
 require_once BASE_PATH . '/includes/nav.php';
 ?>
 <main>
   <!-- Hero -->
+  <?php if ($heroFile): ?>
+  <div class="hero-section" style="background-image:url('<?= SITE_URL ?>/assets/img/<?= e($heroFile) ?>')">
+    <div class="hero-overlay">
+      <div class="container text-center py-5">
+        <h1 class="display-4 fw-bold text-white"><i class="bi bi-ticket-perforated-fill me-2"></i><?= SITE_NAME ?></h1>
+        <p class="lead mb-4 text-white">Secure online event ticketing. Buy tickets, receive them instantly by email, scan at the gate.</p>
+        <a href="<?= SITE_URL ?>/public/events.php" class="btn btn-light btn-lg fw-bold px-5">
+          <i class="bi bi-search me-1"></i> Browse Events
+        </a>
+      </div>
+    </div>
+  </div>
+  <?php else: ?>
   <div class="bg-primary text-white py-5">
     <div class="container text-center">
       <h1 class="display-4 fw-bold"><i class="bi bi-ticket-perforated-fill me-2"></i><?= SITE_NAME ?></h1>
@@ -20,6 +37,7 @@ require_once BASE_PATH . '/includes/nav.php';
       </a>
     </div>
   </div>
+  <?php endif; ?>
 
   <div class="container py-5">
     <?= renderFlash() ?>
@@ -36,9 +54,14 @@ require_once BASE_PATH . '/includes/nav.php';
         <?php foreach ($events as $ev): ?>
           <div class="col-sm-6 col-lg-4">
             <div class="card event-card h-100 shadow-sm">
-              <div class="event-banner">
-                <i class="bi bi-music-note-beamed"></i>
-              </div>
+              <?php if (!empty($ev['event_image'])): ?>
+                <img src="<?= SITE_URL ?>/public/assets/uploads/events/<?= e($ev['event_image']) ?>"
+                     class="card-img-top" alt="<?= e($ev['event_name']) ?>">
+              <?php else: ?>
+                <div class="event-banner">
+                  <i class="bi bi-music-note-beamed"></i>
+                </div>
+              <?php endif; ?>
               <div class="card-body">
                 <h5 class="card-title fw-bold"><?= e($ev['event_name']) ?></h5>
                 <p class="text-muted small mb-2">

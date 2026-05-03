@@ -70,6 +70,7 @@ $pageTitle = $pageTitle ?? 'Admin';
       }
       if (in_array($role, ['admin'])) {
           $navItems[] = ['reports.php', 'bi-bar-chart-line', 'Reports'];
+          $navItems[] = ['settings.php', 'bi-gear', 'Site Settings'];
       }
       // Operational links
       $navItems[] = ['__sep__', '', ''];
