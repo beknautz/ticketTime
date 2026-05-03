@@ -1,5 +1,5 @@
 <?php
-require_once dirname(__DIR__) . '/config/config.php';
+require_once dirname(__DIR__, 2) . '/config/config.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo htmxAlert('danger', 'Invalid request.');

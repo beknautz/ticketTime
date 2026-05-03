@@ -5,7 +5,7 @@ declare(strict_types=1);
 $payload = @file_get_contents('php://input');
 $sigHeader = $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '';
 
-require_once dirname(__DIR__) . '/config/config.php';
+require_once dirname(__DIR__, 2) . '/config/config.php';
 
 // Log all webhook attempts
 Logger::info('Stripe webhook received', ['sig' => substr($sigHeader, 0, 30)]);
