@@ -7,7 +7,7 @@ define('APP_DEBUG', APP_ENV === 'development');
 
 // ── Site ─────────────────────────────────────────────────────────────────────
 define('SITE_NAME', 'Toppenish Rodeo Tickets');
-define('SITE_URL', rtrim(getenv('SITE_URL') ?: 'https://toppenishrodeotickets.com', '/'));
+define('SITE_URL', rtrim(getenv('SITE_URL') ?: 'https://www.toppenishrodeotickets.com', '/'));
 define('BASE_PATH', dirname(__DIR__));
 
 // ── Paths ─────────────────────────────────────────────────────────────────────

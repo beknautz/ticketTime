@@ -4,6 +4,10 @@
   # Allow AutoSSL / Let's Encrypt domain validation through
   RewriteRule ^\.well-known/ - [L]
 
+  # Redirect bare domain to www — cert is issued for www.toppenishrodeotickets.com
+  RewriteCond %{HTTP_HOST} ^toppenishrodeotickets\.com$ [NC]
+  RewriteRule ^ https://www.toppenishrodeotickets.com%{REQUEST_URI} [R=301,L]
+
   # Force HTTPS — handles both direct SSL and GoDaddy's SSL proxy
   RewriteCond %{HTTPS} off
   RewriteCond %{HTTP:X-Forwarded-Proto} !=https
