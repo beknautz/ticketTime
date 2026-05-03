@@ -21,6 +21,7 @@ if (!$event || $event['status'] !== 'active') {
 }
 
 $ticketTypes   = $eventModel->getTicketTypes((int)$event['event_id'], true);
+$ticketColClass = eventColClass((int)getSiteSetting('event_columns', 3));
 $saleActive    = true;
 $saleMessage   = '';
 
@@ -94,7 +95,7 @@ require_once BASE_PATH . '/includes/nav.php';
           $isSoldOut = $tt['status'] === 'sold_out' || $remaining <= 0;
           $maxQty    = min((int)$tt['max_per_order'], $remaining);
         ?>
-        <div class="col-md-6">
+        <div class="<?= $ticketColClass ?>">
           <div class="ticket-type-card p-4 <?= $isSoldOut ? 'opacity-50' : '' ?>">
             <div class="d-flex justify-content-between align-items-start">
               <div>
