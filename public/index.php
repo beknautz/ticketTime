@@ -4,6 +4,7 @@ require_once BASE_PATH . '/includes/auth.php';
 
 $eventModel = new Event();
 $events     = $eventModel->getActive();
+$colClass   = eventColClass((int)getSiteSetting('event_columns', 3));
 
 $pageTitle = 'Home';
 
@@ -52,7 +53,7 @@ require_once BASE_PATH . '/includes/nav.php';
       <h2 class="fw-bold mb-4">Upcoming Events</h2>
       <div class="row g-4">
         <?php foreach ($events as $ev): ?>
-          <div class="col-sm-6 col-lg-4">
+          <div class="<?= $colClass ?>">
             <div class="card event-card h-100 shadow-sm">
               <?php if (!empty($ev['event_image'])): ?>
                 <img src="<?= SITE_URL ?>/public/assets/uploads/events/<?= e($ev['event_image']) ?>"

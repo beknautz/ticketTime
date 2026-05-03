@@ -4,6 +4,7 @@ require_once BASE_PATH . '/includes/auth.php';
 
 $eventModel = new Event();
 $events     = $eventModel->getActive();
+$colClass   = eventColClass((int)getSiteSetting('event_columns', 3));
 
 $pageTitle = 'Events';
 require_once BASE_PATH . '/includes/header.php';
@@ -17,7 +18,7 @@ require_once BASE_PATH . '/includes/nav.php';
   <?php else: ?>
     <div class="row g-4">
       <?php foreach ($events as $ev): ?>
-        <div class="col-md-6">
+        <div class="<?= $colClass ?>">
           <div class="card event-card shadow-sm h-100">
             <div class="card-body">
               <h4 class="fw-bold"><?= e($ev['event_name']) ?></h4>

@@ -11,6 +11,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verifyCsrf();
     $action = $_POST['action'] ?? '';
 
+    // ── Layout ────────────────────────────────────────────────
+    if ($action === 'layout') {
+        $cols = (int)($_POST['event_columns'] ?? 3);
+        if (in_array($cols, [1, 2, 3, 4], true)) {
+            setSiteSetting('event_columns', $cols);
+            flashMessage('success', 'Layout saved!');
+        }
+        redirect(SITE_URL . '/admin/settings.php');
+    }
+
     // ── Logo ──────────────────────────────────────────────────
     if ($action === 'logo') {
         if (!empty($_POST['remove_logo']) && file_exists($imgDir . 'logo.png')) {
@@ -74,7 +84,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$logoExists = file_exists($imgDir . 'logo.png');
+$currentCols = (int)getSiteSetting('event_columns', 3);
+$logoExists  = file_exists($imgDir . 'logo.png');
 $heroFiles  = glob($imgDir . 'hero.*') ?: [];
 $heroFile   = !empty($heroFiles) ? basename($heroFiles[0]) : null;
 
@@ -160,6 +171,40 @@ require_once __DIR__ . '/includes/admin-header.php';
           <?php endif; ?>
           <button type="submit" class="btn btn-primary btn-sm">
             <i class="bi bi-save me-1"></i>Save Hero Image
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Layout -->
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-header fw-bold"><i class="bi bi-grid me-1"></i>Event Listing Layout</div>
+      <div class="card-body">
+        <form method="post">
+          <?= csrfField() ?>
+          <input type="hidden" name="action" value="layout">
+          <label class="form-label fw-semibold">Columns per row</label>
+          <div class="d-flex gap-3 flex-wrap">
+            <?php foreach ([1 => '1 Column', 2 => '2 Columns', 3 => '3 Columns', 4 => '4 Columns'] as $n => $label): ?>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="event_columns"
+                       id="cols<?= $n ?>" value="<?= $n ?>"
+                       <?= $currentCols === $n ? 'checked' : '' ?>>
+                <label class="form-check-label" for="cols<?= $n ?>">
+                  <div class="d-flex gap-1 mb-1">
+                    <?php for ($i = 0; $i < $n; $i++): ?>
+                      <div style="height:28px;background:#D3AF37;border-radius:3px;flex:1;min-width:12px"></div>
+                    <?php endfor; ?>
+                  </div>
+                  <small class="text-muted"><?= $label ?></small>
+                </label>
+              </div>
+            <?php endforeach; ?>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm mt-3">
+            <i class="bi bi-save me-1"></i>Save Layout
           </button>
         </form>
       </div>
