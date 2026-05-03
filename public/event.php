@@ -21,7 +21,7 @@ if (!$event || $event['status'] !== 'active') {
 }
 
 $ticketTypes   = $eventModel->getTicketTypes((int)$event['event_id'], true);
-$ticketColClass = eventColClass((int)getSiteSetting('event_columns', 3));
+$ticketColClass = eventColClass((int)getSiteSetting('ticket_columns', 2));
 $saleActive    = true;
 $saleMessage   = '';
 

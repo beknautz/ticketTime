@@ -16,7 +16,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $cols = (int)($_POST['event_columns'] ?? 3);
         if (in_array($cols, [1, 2, 3, 4], true)) {
             setSiteSetting('event_columns', $cols);
-            flashMessage('success', 'Layout saved!');
+            flashMessage('success', 'Event layout saved!');
+        }
+        redirect(SITE_URL . '/admin/settings.php');
+    }
+
+    if ($action === 'ticket_layout') {
+        $cols = (int)($_POST['ticket_columns'] ?? 2);
+        if (in_array($cols, [1, 2, 3, 4], true)) {
+            setSiteSetting('ticket_columns', $cols);
+            flashMessage('success', 'Ticket layout saved!');
         }
         redirect(SITE_URL . '/admin/settings.php');
     }
@@ -84,7 +93,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$currentCols = (int)getSiteSetting('event_columns', 3);
+$currentCols       = (int)getSiteSetting('event_columns', 3);
+$currentTicketCols = (int)getSiteSetting('ticket_columns', 2);
 $logoExists  = file_exists($imgDir . 'logo.png');
 $heroFiles  = glob($imgDir . 'hero.*') ?: [];
 $heroFile   = !empty($heroFiles) ? basename($heroFiles[0]) : null;
@@ -177,22 +187,22 @@ require_once __DIR__ . '/includes/admin-header.php';
     </div>
   </div>
 
-  <!-- Layout -->
-  <div class="col-12">
+  <!-- Event Listing Layout -->
+  <div class="col-md-6">
     <div class="card shadow-sm">
-      <div class="card-header fw-bold"><i class="bi bi-grid me-1"></i>Event Listing Layout</div>
+      <div class="card-header fw-bold"><i class="bi bi-grid me-1"></i>Event Listing Columns</div>
       <div class="card-body">
         <form method="post">
           <?= csrfField() ?>
           <input type="hidden" name="action" value="layout">
-          <label class="form-label fw-semibold">Columns per row</label>
+          <p class="small text-muted mb-2">Homepage &amp; Events page cards</p>
           <div class="d-flex gap-3 flex-wrap">
             <?php foreach ([1 => '1 Column', 2 => '2 Columns', 3 => '3 Columns', 4 => '4 Columns'] as $n => $label): ?>
               <div class="form-check">
                 <input class="form-check-input" type="radio" name="event_columns"
-                       id="cols<?= $n ?>" value="<?= $n ?>"
+                       id="ecols<?= $n ?>" value="<?= $n ?>"
                        <?= $currentCols === $n ? 'checked' : '' ?>>
-                <label class="form-check-label" for="cols<?= $n ?>">
+                <label class="form-check-label" for="ecols<?= $n ?>">
                   <div class="d-flex gap-1 mb-1">
                     <?php for ($i = 0; $i < $n; $i++): ?>
                       <div style="height:28px;background:#D3AF37;border-radius:3px;flex:1;min-width:12px"></div>
@@ -204,7 +214,41 @@ require_once __DIR__ . '/includes/admin-header.php';
             <?php endforeach; ?>
           </div>
           <button type="submit" class="btn btn-primary btn-sm mt-3">
-            <i class="bi bi-save me-1"></i>Save Layout
+            <i class="bi bi-save me-1"></i>Save
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ticket Type Layout -->
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-header fw-bold"><i class="bi bi-ticket-perforated me-1"></i>Ticket Type Columns</div>
+      <div class="card-body">
+        <form method="post">
+          <?= csrfField() ?>
+          <input type="hidden" name="action" value="ticket_layout">
+          <p class="small text-muted mb-2">Ticket selection grid on the event page</p>
+          <div class="d-flex gap-3 flex-wrap">
+            <?php foreach ([1 => '1 Column', 2 => '2 Columns', 3 => '3 Columns', 4 => '4 Columns'] as $n => $label): ?>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="ticket_columns"
+                       id="tcols<?= $n ?>" value="<?= $n ?>"
+                       <?= $currentTicketCols === $n ? 'checked' : '' ?>>
+                <label class="form-check-label" for="tcols<?= $n ?>">
+                  <div class="d-flex gap-1 mb-1">
+                    <?php for ($i = 0; $i < $n; $i++): ?>
+                      <div style="height:28px;background:#D3AF37;border-radius:3px;flex:1;min-width:12px"></div>
+                    <?php endfor; ?>
+                  </div>
+                  <small class="text-muted"><?= $label ?></small>
+                </label>
+              </div>
+            <?php endforeach; ?>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm mt-3">
+            <i class="bi bi-save me-1"></i>Save
           </button>
         </form>
       </div>
