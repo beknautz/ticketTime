@@ -75,13 +75,7 @@ require_once BASE_PATH . '/includes/nav.php';
               <!-- Individual tickets -->
               <div class="row g-2">
                 <?php foreach ($tickets as $t):
-                  $statusClass = match($t['status']) {
-                    'valid'    => 'success',
-                    'used'     => 'secondary',
-                    'void'     => 'dark',
-                    'refunded' => 'warning',
-                    default    => 'secondary'
-                  };
+                  $statusClass = ['valid' => 'success', 'used' => 'secondary', 'void' => 'dark', 'refunded' => 'warning'][$t['status']] ?? 'secondary';
                 ?>
                   <div class="col-sm-6 col-md-4 col-lg-3">
                     <div class="border rounded p-3 text-center h-100 d-flex flex-column justify-content-between">

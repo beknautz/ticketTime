@@ -88,13 +88,7 @@ if (empty($results)):
             <strong>Individual Tickets</strong>
             <div class="row g-2 mt-1">
               <?php foreach ($tickets as $t):
-                $badgeClass = match($t['status']) {
-                  'valid'    => 'success',
-                  'used'     => 'secondary',
-                  'void'     => 'dark',
-                  'refunded' => 'warning',
-                  default    => 'secondary'
-                };
+                $badgeClass = ['valid' => 'success', 'used' => 'secondary', 'void' => 'dark', 'refunded' => 'warning'][$t['status']] ?? 'secondary';
               ?>
                 <div class="col-sm-6">
                   <div class="border rounded p-2 small d-flex justify-content-between">

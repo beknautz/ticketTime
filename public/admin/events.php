@@ -59,13 +59,7 @@ require_once __DIR__ . '/includes/admin-header.php';
             $sold = (int)$ev['total_sold'];
             $cap  = (int)$ev['total_capacity'];
             $pct  = $cap > 0 ? round($sold / $cap * 100) : 0;
-            $badgeClass = match($ev['status']) {
-              'active'   => 'success',
-              'draft'    => 'warning',
-              'closed'   => 'secondary',
-              'archived' => 'dark',
-              default    => 'secondary'
-            };
+            $badgeClass = ['active' => 'success', 'draft' => 'warning', 'closed' => 'secondary', 'archived' => 'dark'][$ev['status']] ?? 'secondary';
           ?>
             <tr>
               <td>

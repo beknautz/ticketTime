@@ -148,11 +148,7 @@ require_once __DIR__ . '/includes/admin-header.php';
         </thead>
         <tbody>
           <?php foreach ($scans as $s):
-            $rowClass = match($s['scan_result']) {
-              'valid'        => 'table-success',
-              'already_used' => 'table-warning',
-              default        => 'table-danger'
-            };
+            $rowClass = ['valid' => 'table-success', 'already_used' => 'table-warning'][$s['scan_result']] ?? 'table-danger';
           ?>
             <tr class="<?= $rowClass ?>">
               <td class="text-nowrap"><?= formatDate($s['scanned_at'], 'M j g:i:s A') ?></td>

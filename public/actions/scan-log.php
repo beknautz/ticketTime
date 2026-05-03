@@ -29,11 +29,7 @@ if (empty($scans)): ?>
   <table class="table table-sm table-hover mb-0 small">
     <tbody>
       <?php foreach ($scans as $s):
-        $rowClass = match($s['scan_result']) {
-            'valid'       => 'table-success',
-            'already_used'=> 'table-warning',
-            default       => 'table-danger'
-        };
+        $rowClass = ['valid' => 'table-success', 'already_used' => 'table-warning'][$s['scan_result']] ?? 'table-danger';
       ?>
         <tr class="<?= $rowClass ?>">
           <td class="ps-2">

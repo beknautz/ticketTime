@@ -134,13 +134,7 @@ require_once __DIR__ . '/includes/admin-header.php';
           </thead>
           <tbody>
             <?php foreach ($tickets as $t):
-              $badgeClass = match($t['status']) {
-                'valid'    => 'success',
-                'used'     => 'secondary',
-                'void'     => 'dark',
-                'refunded' => 'warning',
-                default    => 'secondary'
-              };
+              $badgeClass = ['valid' => 'success', 'used' => 'secondary', 'void' => 'dark', 'refunded' => 'warning'][$t['status']] ?? 'secondary';
             ?>
               <tr>
                 <td class="text-monospace"><?= e($t['ticket_code']) ?></td>
@@ -189,13 +183,7 @@ require_once __DIR__ . '/includes/admin-header.php';
       <div class="card-header fw-bold">Payment Status</div>
       <div class="card-body">
         <?php
-          $badgeClass = match($order['status']) {
-            'paid'    => 'success',
-            'pending' => 'warning',
-            'failed'  => 'danger',
-            'refunded'=> 'info',
-            default   => 'secondary'
-          };
+          $badgeClass = ['paid' => 'success', 'pending' => 'warning', 'failed' => 'danger', 'refunded' => 'info'][$order['status']] ?? 'secondary';
         ?>
         <span class="badge bg-<?= $badgeClass ?> fs-6 mb-3"><?= ucfirst($order['status']) ?></span>
         <dl class="row small mb-0">

@@ -61,12 +61,7 @@ require_once BASE_PATH . '/includes/nav.php';
         <div class="card-header d-flex justify-content-between align-items-center">
           <h5 class="mb-0 fw-bold">Order #<?= e($order['public_order_id']) ?></h5>
           <?php
-            $badgeClass = match($order['status']) {
-              'paid'    => 'success',
-              'pending' => 'warning',
-              'failed'  => 'danger',
-              default   => 'secondary'
-            };
+            $badgeClass = ['paid' => 'success', 'pending' => 'warning', 'failed' => 'danger'][$order['status']] ?? 'secondary';
           ?>
           <span class="badge bg-<?= $badgeClass ?> fs-6"><?= ucfirst($order['status']) ?></span>
         </div>

@@ -80,11 +80,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $old = $uploadDir . basename($event['event_image']);
                 if (file_exists($old)) unlink($old);
             }
-            $ext  = match(mime_content_type($imageFile['tmp_name'])) {
-                'image/png'  => 'png',
-                'image/webp' => 'webp',
-                default      => 'jpg',
-            };
+            $mimeExt = ['image/png' => 'png', 'image/webp' => 'webp'];
+            $ext     = $mimeExt[mime_content_type($imageFile['tmp_name'])] ?? 'jpg';
             $name = 'event-' . $id . '-' . bin2hex(random_bytes(6)) . '.' . $ext;
             if (move_uploaded_file($imageFile['tmp_name'], $uploadDir . $name)) {
                 $eventModel->updateImage($id, $name);

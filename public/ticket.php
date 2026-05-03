@@ -29,13 +29,7 @@ $qrPath   = $qr->generate(SITE_URL . '/public/ticket.php?token=' . urlencode($ti
 $qrBase64 = $qr->generateBase64(SITE_URL . '/public/ticket.php?token=' . urlencode($ticket['qr_token']), $filename);
 
 $statusClass = 'ticket-status-' . $ticket['status'];
-$statusLabel = match($ticket['status']) {
-    'valid'    => 'Valid',
-    'used'     => 'Used - Entry Recorded',
-    'void'     => 'Voided',
-    'refunded' => 'Refunded',
-    default    => ucfirst($ticket['status']),
-};
+$statusLabel = ['valid' => 'Valid', 'used' => 'Used - Entry Recorded', 'void' => 'Voided', 'refunded' => 'Refunded'][$ticket['status']] ?? ucfirst($ticket['status']);
 
 $pageTitle = 'Ticket: ' . $ticket['ticket_code'];
 require_once BASE_PATH . '/includes/header.php';

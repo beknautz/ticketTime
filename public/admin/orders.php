@@ -86,13 +86,7 @@ require_once __DIR__ . '/includes/admin-header.php';
         </thead>
         <tbody>
           <?php foreach ($orders as $o):
-            $badgeClass = match($o['status']) {
-              'paid'    => 'success',
-              'pending' => 'warning',
-              'failed'  => 'danger',
-              'refunded'=> 'info',
-              default   => 'secondary'
-            };
+            $badgeClass = ['paid' => 'success', 'pending' => 'warning', 'failed' => 'danger', 'refunded' => 'info'][$o['status']] ?? 'secondary';
           ?>
             <tr>
               <td><span class="text-monospace"><?= e($o['public_order_id']) ?></span></td>
