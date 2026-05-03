@@ -1,10 +1,15 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
 
-  # When GoDaddy's document root is set to this public/ folder instead of
-  # the project root, incoming URLs like /public/event.php resolve to
-  # public/public/event.php (404). Strip the extra /public/ prefix and
-  # redirect so the file is served correctly from this directory.
-  RewriteCond %{REQUEST_URI} ^/public/(.*)$
+  # Allow AutoSSL / Let's Encrypt domain validation through
+  RewriteRule ^\.well-known/ - [L]
+
+  # Force HTTPS — handles both direct SSL and GoDaddy's SSL proxy
+  RewriteCond %{HTTPS} off
+  RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+  # Strip extra /public/ prefix when GoDaddy doc root is set to this folder
+  RewriteCond %{REQUEST_URI} ^/public/
   RewriteRule ^public/(.*)$ /$1 [R=301,L]
 </IfModule>
