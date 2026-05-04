@@ -2,10 +2,11 @@
 declare(strict_types=1);
 
 // Raw body must be read before any framework bootstrapping
-$payload = @file_get_contents('php://input');
+$payload   = @file_get_contents('php://input');
 $sigHeader = $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '';
 
 require_once dirname(__DIR__, 2) . '/config/config.php';
+require_once BASE_PATH . '/includes/order-fulfillment.php';
 
 // Log all webhook attempts
 Logger::info('Stripe webhook received', ['sig' => substr($sigHeader, 0, 30)]);
@@ -95,61 +96,7 @@ function handlePaymentIntentSucceeded(array $pi): void
         return;
     }
 
-    try {
-        $db = Database::getInstance();
-        $db->beginTransaction();
-
-        // Mark order paid
-        $orderModel->markPaid((int)$order['order_id'], $pi['status'] ?? 'succeeded');
-
-        // Generate tickets
-        $ticketModel = new Ticket();
-        $tickets     = $ticketModel->generateForOrder((int)$order['order_id']);
-
-        // Generate QR codes for each ticket
-        $qr = new QRCode();
-        foreach ($tickets as $t) {
-            $qr->generate(
-                SITE_URL . '/public/ticket.php?token=' . urlencode($t['qr_token']),
-                'ticket-' . $t['ticket_id']
-            );
-        }
-
-        // Generate order-level barcode QR
-        $qr->generate(
-            SITE_URL . '/public/willcall.php?token=' . urlencode($order['order_barcode_token']),
-            'order-' . $order['order_id']
-        );
-
-        $db->commit();
-
-        // Clear cart (if same session — usually not for webhook)
-        // clearCart(); // Done on confirmation page instead
-
-        // Send confirmation email
-        $freshOrder = $orderModel->getById((int)$order['order_id']);
-        $items      = $orderModel->getItems((int)$order['order_id']);
-        $allTickets = $orderModel->getTickets((int)$order['order_id']);
-
-        $mailer = new Mailer();
-        $sent   = $mailer->sendOrderConfirmation($freshOrder, $items, $allTickets);
-
-        Logger::info('Order paid and tickets generated', [
-            'order'         => $order['public_order_id'],
-            'tickets'       => count($tickets),
-            'email_sent'    => $sent,
-        ]);
-
-    } catch (\Throwable $e) {
-        if (isset($db) && $db->inTransaction()) {
-            $db->rollBack();
-        }
-        Logger::error('Webhook: failed to process payment success', [
-            'pi'    => $piId,
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
-        ]);
-    }
+    fulfillPaidOrder($order, $pi['status'] ?? 'succeeded');
 }
 
 function handlePaymentIntentFailed(array $pi): void
