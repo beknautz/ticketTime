@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 // ── Environment ──────────────────────────────────────────────────────────────
-define('APP_ENV', getenv('APP_ENV') ?: 'production'); // development | production
+define('APP_ENV', getenv('APP_ENV') ?: 'development'); // development | production  ← change back to 'production' after troubleshooting
 define('APP_DEBUG', APP_ENV === 'development');
 
 // ── Site ─────────────────────────────────────────────────────────────────────

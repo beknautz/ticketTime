@@ -132,6 +132,7 @@ try {
     if (isset($db) && $db->inTransaction()) {
         $db->rollBack();
     }
-    Logger::error('Order creation failed', ['error' => $e->getMessage()]);
-    echo json_encode(['success' => false, 'error' => 'Order creation failed. Please try again.']);
+    Logger::error('Order creation failed', ['error' => $e->getMessage(), 'file' => $e->getFile(), 'line' => $e->getLine()]);
+    $msg = APP_DEBUG ? $e->getMessage() . ' (' . basename($e->getFile()) . ':' . $e->getLine() . ')' : 'Order creation failed. Please try again.';
+    echo json_encode(['success' => false, 'error' => $msg]);
 }
