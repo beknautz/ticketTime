@@ -99,8 +99,18 @@ require_once __DIR__ . '/includes/admin-header.php';
               <td><span class="badge bg-<?= $badgeClass ?>"><?= ucfirst($o['status']) ?></span></td>
               <td class="text-muted"><?= formatDate($o['created_at'], 'M j g:i A') ?></td>
               <td>
-                <a href="<?= SITE_URL ?>/admin/order-view.php?id=<?= (int)$o['order_id'] ?>"
-                   class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i></a>
+                <div class="d-flex gap-1">
+                  <a href="<?= SITE_URL ?>/admin/order-view.php?id=<?= (int)$o['order_id'] ?>"
+                     class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i></a>
+                  <?php if (canAdmin()): ?>
+                    <form method="post" action="<?= SITE_URL ?>/admin/order-view.php?id=<?= (int)$o['order_id'] ?>"
+                          onsubmit="return confirm('Delete order <?= e($o['public_order_id']) ?>? This cannot be undone.')">
+                      <?= csrfField() ?>
+                      <input type="hidden" name="action" value="delete_order">
+                      <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                    </form>
+                  <?php endif; ?>
+                </div>
               </td>
             </tr>
           <?php endforeach; ?>

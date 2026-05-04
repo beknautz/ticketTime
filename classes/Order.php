@@ -220,4 +220,18 @@ class Order
         ");
         return $stmt->execute(['by' => $pickedUpBy, 'id' => $orderId]);
     }
+
+    public function delete(int $orderId): void
+    {
+        // Release inventory for each ticket type in this order
+        $items = $this->getItems($orderId);
+        $ttModel = new TicketType();
+        foreach ($items as $item) {
+            $ttModel->releaseQuantity((int)$item['ticket_type_id'], (int)$item['quantity']);
+        }
+
+        $this->db->prepare("DELETE FROM tickets    WHERE order_id = ?")->execute([$orderId]);
+        $this->db->prepare("DELETE FROM order_items WHERE order_id = ?")->execute([$orderId]);
+        $this->db->prepare("DELETE FROM orders     WHERE order_id = ?")->execute([$orderId]);
+    }
 }

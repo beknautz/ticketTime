@@ -28,6 +28,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         flashMessage('success', 'Ticket voided.');
         redirect(SITE_URL . '/admin/order-view.php?id=' . $orderId);
     }
+
+    if ($action === 'delete_order' && canAdmin()) {
+        $orderModel->delete($orderId);
+        flashMessage('success', 'Order ' . e($order['public_order_id']) . ' deleted.');
+        redirect(SITE_URL . '/admin/orders.php');
+    }
 }
 
 $pageTitle = 'Order ' . $order['public_order_id'];
@@ -48,6 +54,15 @@ require_once __DIR__ . '/includes/admin-header.php';
               hx-swap="innerHTML">
         <i class="bi bi-envelope me-1"></i>Resend Tickets
       </button>
+    <?php endif; ?>
+    <?php if (canAdmin()): ?>
+      <form method="post" onsubmit="return confirm('Permanently delete order <?= e($order['public_order_id']) ?> and all its tickets? This cannot be undone.')">
+        <?= csrfField() ?>
+        <input type="hidden" name="action" value="delete_order">
+        <button type="submit" class="btn btn-danger">
+          <i class="bi bi-trash me-1"></i>Delete Order
+        </button>
+      </form>
     <?php endif; ?>
     <a href="<?= SITE_URL ?>/admin/orders.php" class="btn btn-outline-secondary">
       <i class="bi bi-arrow-left me-1"></i>Back
