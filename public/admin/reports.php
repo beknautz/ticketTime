@@ -75,16 +75,13 @@ $events = $eventModel->getAll();
 
 // Revenue by event
 $revenueByEvent = $db->query("
-    SELECT e.event_name, e.event_start,
-           COUNT(DISTINCT o.order_id) as orders,
-           COALESCE(SUM(CASE WHEN o.status='paid' THEN 1 ELSE 0 END),0) as paid_orders,
-           COALESCE(SUM(tt.quantity_sold),0) as tickets_sold,
-           COALESCE(SUM(tt.quantity_available),0) as capacity,
-           COALESCE(SUM(CASE WHEN o.status='paid' THEN o.total ELSE 0 END),0) as revenue
+    SELECT e.event_id, e.event_name, e.event_start,
+        COALESCE((SELECT COUNT(*) FROM orders o WHERE o.event_id = e.event_id), 0) as orders,
+        COALESCE((SELECT COUNT(*) FROM orders o WHERE o.event_id = e.event_id AND o.status = 'paid'), 0) as paid_orders,
+        COALESCE((SELECT SUM(tt.quantity_sold)     FROM ticket_types tt WHERE tt.event_id = e.event_id), 0) as tickets_sold,
+        COALESCE((SELECT SUM(tt.quantity_available) FROM ticket_types tt WHERE tt.event_id = e.event_id), 0) as capacity,
+        COALESCE((SELECT SUM(o.total) FROM orders o WHERE o.event_id = e.event_id AND o.status = 'paid'), 0) as revenue
     FROM events e
-    LEFT JOIN ticket_types tt ON tt.event_id = e.event_id
-    LEFT JOIN orders o ON o.event_id = e.event_id
-    GROUP BY e.event_id
     ORDER BY e.event_start DESC
 ")->fetchAll();
 
@@ -132,13 +129,13 @@ require_once __DIR__ . '/includes/admin-header.php';
               <td class="text-end fw-bold"><?= formatMoney((float)$ev['revenue']) ?></td>
               <td>
                 <div class="btn-group btn-group-sm">
-                  <a href="?export=orders&event_id=0" class="btn btn-outline-secondary" title="Orders CSV">
+                  <a href="?export=orders&event_id=<?= (int)$ev['event_id'] ?>" class="btn btn-outline-secondary" title="Orders CSV">
                     <i class="bi bi-file-earmark-spreadsheet"></i> Orders
                   </a>
-                  <a href="?export=tickets&event_id=0" class="btn btn-outline-secondary" title="Tickets CSV">
+                  <a href="?export=tickets&event_id=<?= (int)$ev['event_id'] ?>" class="btn btn-outline-secondary" title="Tickets CSV">
                     <i class="bi bi-ticket-perforated"></i> Tickets
                   </a>
-                  <a href="?export=scans&event_id=0" class="btn btn-outline-secondary" title="Scans CSV">
+                  <a href="?export=scans&event_id=<?= (int)$ev['event_id'] ?>" class="btn btn-outline-secondary" title="Scans CSV">
                     <i class="bi bi-qr-code-scan"></i> Scans
                   </a>
                 </div>
