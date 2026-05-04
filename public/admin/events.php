@@ -14,14 +14,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
     if ($event) {
         $err = $eventModel->delete($delId);
         if ($err) {
-            flashMessage('danger', $err);
+            flashMessage('danger', e($err));
         } else {
             // Remove banner image file if present
             if (!empty($event['event_image'])) {
                 $img = BASE_PATH . '/public/assets/uploads/events/' . basename($event['event_image']);
                 if (file_exists($img)) unlink($img);
             }
-            flashMessage('success', '"' . $event['event_name'] . '" deleted.');
+            flashMessage('success', '"' . e($event['event_name']) . '" deleted.');
         }
     }
     redirect(SITE_URL . '/admin/events.php');

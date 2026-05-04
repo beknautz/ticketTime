@@ -56,7 +56,7 @@ function htmxAlert(string $type, string $message, string $extra = ''): string
     return sprintf(
         '<div class="alert alert-%s alert-dismissible fade show" role="alert">%s<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>%s',
         e($type),
-        e($message),
+        $message,
         $extra
     );
 }
