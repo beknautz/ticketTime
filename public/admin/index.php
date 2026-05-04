@@ -30,14 +30,11 @@ $recentOrders = $db->query("
 // Events summary
 $events = $db->query("
     SELECT e.*,
-        COALESCE(SUM(tt.quantity_sold), 0) as sold,
-        COALESCE(SUM(tt.quantity_available), 0) as capacity,
-        COALESCE(SUM(CASE WHEN o.status = 'paid' THEN o.total ELSE 0 END), 0) as revenue
+        COALESCE((SELECT SUM(tt.quantity_sold)    FROM ticket_types tt WHERE tt.event_id = e.event_id), 0) as sold,
+        COALESCE((SELECT SUM(tt.quantity_available) FROM ticket_types tt WHERE tt.event_id = e.event_id), 0) as capacity,
+        COALESCE((SELECT SUM(o.total) FROM orders o WHERE o.event_id = e.event_id AND o.status = 'paid'), 0) as revenue
     FROM events e
-    LEFT JOIN ticket_types tt ON tt.event_id = e.event_id
-    LEFT JOIN orders o ON o.event_id = e.event_id
     WHERE e.status IN ('active','closed')
-    GROUP BY e.event_id
     ORDER BY e.event_start DESC
     LIMIT 5
 ")->fetchAll();
