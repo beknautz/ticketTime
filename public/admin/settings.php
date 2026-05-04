@@ -11,6 +11,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verifyCsrf();
     $action = $_POST['action'] ?? '';
 
+    // ── Contact Info ─────────────────────────────────────────
+    if ($action === 'contact') {
+        $email = trim($_POST['support_email'] ?? '');
+        $phone = trim($_POST['support_phone'] ?? '');
+        if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $errors[] = 'Please enter a valid email address.';
+        } else {
+            setSiteSetting('support_email', $email);
+            setSiteSetting('support_phone', $phone);
+            flashMessage('success', 'Contact info saved!');
+            redirect(SITE_URL . '/admin/settings.php');
+        }
+    }
+
     // ── Layout ────────────────────────────────────────────────
     if ($action === 'layout') {
         $cols = (int)($_POST['event_columns'] ?? 3);
@@ -95,6 +109,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $currentCols       = (int)getSiteSetting('event_columns', 3);
 $currentTicketCols = (int)getSiteSetting('ticket_columns', 2);
+$currentEmail      = getSiteSetting('support_email', SUPPORT_EMAIL);
+$currentPhone      = getSiteSetting('support_phone', SUPPORT_PHONE);
 $logoExists  = file_exists($imgDir . 'logo.png');
 $heroFiles  = glob($imgDir . 'hero.*') ?: [];
 $heroFile   = !empty($heroFiles) ? basename($heroFiles[0]) : null;
@@ -214,6 +230,37 @@ require_once __DIR__ . '/includes/admin-header.php';
             <?php endforeach; ?>
           </div>
           <button type="submit" class="btn btn-primary btn-sm mt-3">
+            <i class="bi bi-save me-1"></i>Save
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contact Info -->
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-header fw-bold"><i class="bi bi-telephone me-1"></i>Footer Contact Info</div>
+      <div class="card-body">
+        <form method="post">
+          <?= csrfField() ?>
+          <input type="hidden" name="action" value="contact">
+          <div class="mb-3">
+            <label class="form-label fw-semibold small" for="support_email">Support Email</label>
+            <input type="email" name="support_email" id="support_email"
+                   class="form-control form-control-sm"
+                   value="<?= e($currentEmail) ?>"
+                   placeholder="support@example.com">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold small" for="support_phone">Support Phone</label>
+            <input type="text" name="support_phone" id="support_phone"
+                   class="form-control form-control-sm"
+                   value="<?= e($currentPhone) ?>"
+                   placeholder="(555) 000-0000">
+            <div class="form-text">Leave phone blank to hide it from the footer.</div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm">
             <i class="bi bi-save me-1"></i>Save
           </button>
         </form>
