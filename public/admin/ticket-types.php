@@ -56,9 +56,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $success = 'Ticket type updated.';
             }
         } else {
-                $ttModel->create($data);
-                $success = 'Ticket type created.';
-            }
+            $ttModel->create($data);
+            $success = 'Ticket type created.';
         }
     }
 }
