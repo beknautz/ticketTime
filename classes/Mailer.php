@@ -39,10 +39,59 @@ class Mailer
 
     public function send(string $toEmail, string $toName, string $subject, string $htmlBody): bool
     {
+        if (MAIL_DRIVER === 'sendgrid') {
+            return $this->sendWithSendGrid($toEmail, $toName, $subject, $htmlBody);
+        }
         if ($this->usePhpMailer) {
             return $this->sendWithPhpMailer($toEmail, $toName, $subject, $htmlBody);
         }
         return $this->sendWithNativeMail($toEmail, $toName, $subject, $htmlBody);
+    }
+
+    private function sendWithSendGrid(string $toEmail, string $toName, string $subject, string $htmlBody): bool
+    {
+        $payload = [
+            'personalizations' => [[
+                'to' => [['email' => $toEmail, 'name' => $toName]],
+            ]],
+            'from'    => ['email' => MAIL_FROM_ADDRESS, 'name' => MAIL_FROM_NAME],
+            'reply_to'=> ['email' => MAIL_REPLY_TO],
+            'subject' => $subject,
+            'content' => [
+                ['type' => 'text/plain', 'value' => strip_tags(str_replace(['<br>', '<br/>', '<br />'], "\n", $htmlBody))],
+                ['type' => 'text/html',  'value' => $htmlBody],
+            ],
+        ];
+
+        $ch = curl_init('https://api.sendgrid.com/v3/mail/send');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => json_encode($payload),
+            CURLOPT_HTTPHEADER     => [
+                'Authorization: Bearer ' . SENDGRID_API_KEY,
+                'Content-Type: application/json',
+            ],
+            CURLOPT_TIMEOUT => 15,
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr  = curl_error($ch);
+        curl_close($ch);
+
+        if ($curlErr) {
+            Logger::error('SendGrid cURL error', ['error' => $curlErr, 'to' => $toEmail]);
+            return false;
+        }
+
+        if ($httpCode >= 400) {
+            Logger::error('SendGrid API error', ['http' => $httpCode, 'response' => $response, 'to' => $toEmail]);
+            return false;
+        }
+
+        Logger::info('SendGrid email sent', ['to' => $toEmail, 'subject' => $subject, 'http' => $httpCode]);
+        return true;
     }
 
     private function sendWithPhpMailer(string $toEmail, string $toName, string $subject, string $body): bool

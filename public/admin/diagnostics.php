@@ -59,14 +59,11 @@ foreach (['logs' => LOG_PATH, 'qrcodes' => QR_PATH, 'tickets' => TICKET_PATH] as
     $checks[] = ['label' => "storage/{$name} writable", 'ok' => $writable, 'detail' => $path . ($writable ? ' ✓' : (!$exists ? ' — directory missing' : ' — not writable'))];
 }
 
-// ── Mail config ───────────────────────────────────────────────────────────────
-try {
-    require_once BASE_PATH . '/config/mail.php';
-    $mailOk = defined('MAIL_HOST') && MAIL_HOST !== '' && MAIL_HOST !== 'smtp.example.com';
-    $checks[] = ['label' => 'Mail (SMTP) config', 'ok' => $mailOk, 'detail' => $mailOk ? (MAIL_HOST . ':' . (defined('MAIL_PORT') ? MAIL_PORT : '?')) : 'MAIL_HOST not configured'];
-} catch (\Throwable $e) {
-    $checks[] = ['label' => 'Mail (SMTP) config', 'ok' => false, 'detail' => $e->getMessage()];
-}
+// ── Mail / SendGrid config ────────────────────────────────────────────────────
+$sgSet = defined('SENDGRID_API_KEY') && strncmp(SENDGRID_API_KEY, 'SG.', 3) === 0 && SENDGRID_API_KEY !== 'SG.REPLACE_ME';
+$checks[] = ['label' => 'Mail driver',       'ok' => true,  'detail' => MAIL_DRIVER];
+$checks[] = ['label' => 'SendGrid API key',  'ok' => $sgSet, 'detail' => $sgSet ? substr(SENDGRID_API_KEY, 0, 10) . '…' : 'Not set (still SG.REPLACE_ME)'];
+$checks[] = ['label' => 'Mail from address', 'ok' => MAIL_FROM_ADDRESS !== 'noreply@tickettime.local', 'detail' => MAIL_FROM_ADDRESS];
 
 // ── PHP version ───────────────────────────────────────────────────────────────
 $phpOk = version_compare(PHP_VERSION, '7.4', '>=');
