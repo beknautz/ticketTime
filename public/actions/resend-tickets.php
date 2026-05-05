@@ -6,6 +6,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+verifyCsrf();
+
 $publicOrderId = trim($_POST['public_order_id'] ?? '');
 
 if (!$publicOrderId) {
