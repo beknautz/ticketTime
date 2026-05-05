@@ -97,6 +97,48 @@ $checks[] = ['label' => 'PHP version', 'ok' => $phpOk, 'detail' => PHP_VERSION];
 $checks[] = ['label' => 'SITE_URL',  'ok' => true, 'detail' => SITE_URL];
 $checks[] = ['label' => 'APP_ENV',   'ok' => true, 'detail' => APP_ENV . (APP_DEBUG ? ' (debug ON)' : '')];
 
+// ── Test email send ───────────────────────────────────────────────────────────
+$testEmailResult = null;
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_test_email'])) {
+    verifyCsrf();
+    $testTo = trim($_POST['test_email'] ?? '');
+    if ($testTo && filter_var($testTo, FILTER_VALIDATE_EMAIL) && $sgSet) {
+        $payload = [
+            'personalizations' => [['to' => [['email' => $testTo]]]],
+            'from'    => ['email' => MAIL_FROM_ADDRESS, 'name' => MAIL_FROM_NAME],
+            'subject' => 'TicketTime Test Email',
+            'content' => [['type' => 'text/plain', 'value' => 'This is a test email from ' . SITE_NAME . ' diagnostics.']],
+        ];
+        $ch = curl_init('https://api.sendgrid.com/v3/mail/send');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => json_encode($payload),
+            CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . SENDGRID_API_KEY, 'Content-Type: application/json'],
+            CURLOPT_TIMEOUT        => 15,
+        ]);
+        $sgTestResp = curl_exec($ch);
+        $sgTestCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $sgTestErr  = curl_error($ch);
+        curl_close($ch);
+
+        if ($sgTestErr) {
+            $testEmailResult = ['ok' => false, 'detail' => 'cURL error: ' . $sgTestErr];
+        } elseif ($sgTestCode === 202) {
+            $testEmailResult = ['ok' => true, 'detail' => 'Sent! Check inbox at ' . $testTo];
+        } else {
+            $decoded = json_decode($sgTestResp, true);
+            $msg = '';
+            if (!empty($decoded['errors'])) {
+                $msg = implode('; ', array_column($decoded['errors'], 'message'));
+            }
+            $testEmailResult = ['ok' => false, 'detail' => 'HTTP ' . $sgTestCode . ': ' . ($msg ?: $sgTestResp)];
+        }
+    } else {
+        $testEmailResult = ['ok' => false, 'detail' => 'Invalid email or SendGrid key not configured.'];
+    }
+}
+
 $allOk = !in_array(false, array_column($checks, 'ok'), true);
 
 $pageTitle = 'Diagnostics';
@@ -129,6 +171,31 @@ require_once __DIR__ . '/includes/admin-header.php';
         <?php endforeach; ?>
       </tbody>
     </table>
+  </div>
+</div>
+
+<!-- Test Email -->
+<div class="card shadow-sm mt-4">
+  <div class="card-header fw-bold"><i class="bi bi-envelope me-1"></i>Send Test Email</div>
+  <div class="card-body">
+    <?php if ($testEmailResult): ?>
+      <div class="alert alert-<?= $testEmailResult['ok'] ? 'success' : 'danger' ?> mb-3">
+        <?= e($testEmailResult['detail']) ?>
+      </div>
+    <?php endif; ?>
+    <form method="post" class="d-flex gap-2 align-items-end">
+      <?= csrfField() ?>
+      <div>
+        <label class="form-label small fw-semibold mb-1">Recipient email</label>
+        <input type="email" name="test_email" class="form-control form-control-sm"
+               style="width:280px" placeholder="you@example.com"
+               value="<?= e($_POST['test_email'] ?? '') ?>">
+      </div>
+      <button type="submit" name="send_test_email" value="1" class="btn btn-primary btn-sm">
+        <i class="bi bi-send me-1"></i>Send Test
+      </button>
+    </form>
+    <div class="form-text mt-1">Sends directly via SendGrid API — bypasses the Mailer class to isolate issues.</div>
   </div>
 </div>
 
