@@ -1,0 +1,17 @@
+# Dependencies
+/vendor/
+
+# Local environment config (never commit real credentials)
+/config/local.php
+
+# Storage (logs, QR codes, generated tickets)
+/storage/logs/
+/storage/qrcodes/
+/storage/tickets/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

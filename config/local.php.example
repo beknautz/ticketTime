@@ -1,0 +1,19 @@
+<?php
+// Copy this file to config/local.php on the server and fill in real values.
+// This file is gitignored — it will never be overwritten by git pull.
+// Uses putenv() so all existing getenv() calls in config files pick up the values.
+
+putenv('DB_HOST=localhost');
+putenv('DB_NAME=your_db_name');
+putenv('DB_USER=your_db_user');
+putenv('DB_PASS=your_db_password');
+
+putenv('STRIPE_SECRET_KEY=sk_live_REPLACE_ME');
+putenv('STRIPE_PUBLISHABLE_KEY=pk_live_REPLACE_ME');
+putenv('STRIPE_WEBHOOK_SECRET=whsec_REPLACE_ME');
+
+putenv('SENDGRID_API_KEY=SG.REPLACE_ME');
+putenv('MAIL_FROM_ADDRESS=toppenishrodetickets@gmail.com');
+
+putenv('SITE_URL=https://www.toppenishrodeotickets.com');
+putenv('APP_ENV=production');
