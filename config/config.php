@@ -1,14 +1,7 @@
 <?php
 declare(strict_types=1);
 
-// ── Local overrides (gitignored — safe for real credentials) ─────────────────
-$_localConfig = __DIR__ . '/local.php';
-if (file_exists($_localConfig)) {
-    require_once $_localConfig;
-}
-unset($_localConfig);
-
-// ── Environment ───────────────────────────────────────────────────────────────
+// ── Environment ──────────────────────────────────────────────────────────────
 define('APP_ENV', getenv('APP_ENV') ?: 'production'); // development | production
 define('APP_DEBUG', APP_ENV === 'development');
 
