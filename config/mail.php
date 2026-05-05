@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 define('MAIL_FROM_NAME',    getenv('MAIL_FROM_NAME')    ?: SITE_NAME);
-define('MAIL_FROM_ADDRESS', getenv('MAIL_FROM_ADDRESS') ?: 'toppenishrodetickets@gmail.com');
+define('MAIL_FROM_ADDRESS', getenv('MAIL_FROM_ADDRESS') ?: 'tickets@toppenishrodeotickets.com');
 define('MAIL_REPLY_TO',     getenv('MAIL_REPLY_TO')     ?: SUPPORT_EMAIL);
 
 // Driver: sendgrid | smtp | mail

@@ -13,7 +13,7 @@ putenv('STRIPE_PUBLISHABLE_KEY=pk_live_REPLACE_ME');
 putenv('STRIPE_WEBHOOK_SECRET=whsec_REPLACE_ME');
 
 putenv('SENDGRID_API_KEY=SG.REPLACE_ME');
-putenv('MAIL_FROM_ADDRESS=toppenishrodetickets@gmail.com');
+putenv('MAIL_FROM_ADDRESS=tickets@toppenishrodeotickets.com');
 
 putenv('SITE_URL=https://www.toppenishrodeotickets.com');
 putenv('APP_ENV=production');
