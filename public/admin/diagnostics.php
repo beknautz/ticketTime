@@ -65,6 +65,30 @@ $checks[] = ['label' => 'Mail driver',       'ok' => true,  'detail' => MAIL_DRI
 $checks[] = ['label' => 'SendGrid API key',  'ok' => $sgSet, 'detail' => $sgSet ? substr(SENDGRID_API_KEY, 0, 10) . '…' : 'Not set (still SG.REPLACE_ME)'];
 $checks[] = ['label' => 'Mail from address', 'ok' => MAIL_FROM_ADDRESS !== 'noreply@tickettime.local', 'detail' => MAIL_FROM_ADDRESS];
 
+if ($sgSet) {
+    $ch = curl_init('https://api.sendgrid.com/v3/user/profile');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . SENDGRID_API_KEY],
+        CURLOPT_TIMEOUT        => 10,
+    ]);
+    $sgResp = curl_exec($ch);
+    $sgCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $sgErr  = curl_error($ch);
+    curl_close($ch);
+    if ($sgErr) {
+        $checks[] = ['label' => 'SendGrid API reachable', 'ok' => false, 'detail' => 'cURL error: ' . $sgErr];
+    } elseif ($sgCode === 200) {
+        $sgData = json_decode($sgResp, true);
+        $checks[] = ['label' => 'SendGrid API reachable', 'ok' => true, 'detail' => 'Account: ' . ($sgData['email'] ?? 'OK')];
+    } else {
+        $sgData = json_decode($sgResp, true);
+        $checks[] = ['label' => 'SendGrid API reachable', 'ok' => false, 'detail' => 'HTTP ' . $sgCode . ': ' . ($sgData['errors'][0]['message'] ?? $sgResp)];
+    }
+} else {
+    $checks[] = ['label' => 'SendGrid API reachable', 'ok' => false, 'detail' => 'Skipped — key not configured'];
+}
+
 // ── PHP version ───────────────────────────────────────────────────────────────
 $phpOk = version_compare(PHP_VERSION, '7.4', '>=');
 $checks[] = ['label' => 'PHP version', 'ok' => $phpOk, 'detail' => PHP_VERSION];
