@@ -22,12 +22,7 @@ if (!$ticket) {
     exit;
 }
 
-// Generate QR code
-$qr       = new QRCode();
-$filename = 'ticket-' . $ticket['ticket_id'];
-$qrPath   = $qr->generate(SITE_URL . '/public/ticket.php?token=' . urlencode($ticket['qr_token']), $filename);
-$qrBase64 = $qr->generateBase64(SITE_URL . '/public/ticket.php?token=' . urlencode($ticket['qr_token']), $filename);
-
+$ticketUrl   = SITE_URL . '/public/ticket.php?token=' . urlencode($ticket['qr_token']);
 $statusClass = 'ticket-status-' . $ticket['status'];
 $statusLabel = ['valid' => 'Valid', 'used' => 'Used - Entry Recorded', 'void' => 'Voided', 'refunded' => 'Refunded'][$ticket['status']] ?? ucfirst($ticket['status']);
 
@@ -89,7 +84,9 @@ require_once BASE_PATH . '/includes/nav.php';
       <!-- QR Code -->
       <?php if ($ticket['status'] === 'valid'): ?>
         <div class="ticket-qr">
-          <img src="<?= $qrBase64 ?>" alt="QR Code" class="img-fluid">
+          <div id="qr-container" style="display:flex;justify-content:center;align-items:center;min-height:220px;">
+            <span class="text-muted small">Generating QR code…</span>
+          </div>
           <div class="ticket-code mt-2"><?= e($ticket['ticket_code']) ?></div>
           <small class="text-muted">Show this QR code at the gate</small>
         </div>
@@ -112,4 +109,32 @@ require_once BASE_PATH . '/includes/nav.php';
     </a>
   </div>
 </main>
+
+<?php if ($ticket['status'] === 'valid'): ?>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+(function () {
+  var container = document.getElementById('qr-container');
+  if (!container || typeof QRCode === 'undefined') return;
+
+  var canvas = document.createElement('canvas');
+  QRCode.toCanvas(canvas, <?= json_encode($ticketUrl) ?>, {
+    width: 260,
+    margin: 2,
+    color: { dark: '#000000', light: '#ffffff' },
+    errorCorrectionLevel: 'H'
+  }, function (err) {
+    container.innerHTML = '';
+    if (err) {
+      container.innerHTML = '<p class="text-danger small">Could not generate QR code. Try refreshing.</p>';
+    } else {
+      canvas.style.cssText = 'display:block;max-width:100%;border-radius:4px;';
+      container.appendChild(canvas);
+    }
+  });
+}());
+</script>
+<?php endif; ?>
+
 <?php require_once BASE_PATH . '/includes/footer.php'; ?>
+

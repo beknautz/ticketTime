@@ -31,6 +31,12 @@ class QRCode
     {
         $filePath = $this->outputDir . '/' . $filename . '.png';
 
+        // Treat old SVG placeholders (broken fallback) as missing so they regenerate
+        $svgPath = $this->outputDir . '/' . $filename . '.svg';
+        if (file_exists($svgPath) && !file_exists($filePath)) {
+            @unlink($svgPath);
+        }
+
         if (file_exists($filePath)) {
             return $filePath;
         }
@@ -94,16 +100,32 @@ class QRCode
     }
 
     /**
-     * Pure-PHP SVG QR code generation (no external libs, no GD).
-     * Uses a simplified QR code matrix algorithm for Version 1 (21x21).
-     * For production data, uses the Google QR API as a reliable fallback.
+     * Fallback QR code generation via api.qrserver.com.
+     * Fetches a real PNG QR code via cURL and caches it locally.
      */
     private function generateFallback(string $data, string $filePath): string
     {
-        // Use a QR matrix implementation
+        $apiUrl = 'https://api.qrserver.com/v1/create-qr-code/?'
+                . http_build_query(['size' => '300x300', 'ecc' => 'H', 'data' => $data]);
+
+        $ch = curl_init($apiUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 10,
+            CURLOPT_FOLLOWLOCATION => true,
+        ]);
+        $png  = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($png && $code === 200) {
+            file_put_contents($filePath, $png);
+            return $filePath;
+        }
+
+        // Last resort: SVG placeholder (not scannable — JS on ticket.php handles display)
         $svgPath = str_replace('.png', '.svg', $filePath);
-        $svg = $this->buildSvgQR($data);
-        file_put_contents($svgPath, $svg);
+        file_put_contents($svgPath, $this->buildSvgQR($data));
         return $svgPath;
     }
 
