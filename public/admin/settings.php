@@ -11,6 +11,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verifyCsrf();
     $action = $_POST['action'] ?? '';
 
+    // ── Mail / SendGrid ───────────────────────────────────────────────────
+    if ($action === 'mail') {
+        $key = trim($_POST['sendgrid_api_key'] ?? '');
+        if ($key !== '' && strncmp($key, 'SG.', 3) !== 0) {
+            $errors[] = 'SendGrid API key must start with SG.';
+        } else {
+            setSiteSetting('sendgrid_api_key', $key);
+            setSiteSetting('mail_from_address', trim($_POST['mail_from_address'] ?? ''));
+            setSiteSetting('mail_from_name',    trim($_POST['mail_from_name']    ?? ''));
+            flashMessage('success', 'Mail settings saved!');
+            redirect(SITE_URL . '/admin/settings.php');
+        }
+    }
+
     // ── Ticket pickup message ─────────────────────────────────────────────
     if ($action === 'ticket_message') {
         setSiteSetting('ticket_pickup_message', trim($_POST['ticket_pickup_message'] ?? ''));
@@ -114,11 +128,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$currentCols       = (int)getSiteSetting('event_columns', 3);
-$currentTicketCols = (int)getSiteSetting('ticket_columns', 2);
+$currentCols          = (int)getSiteSetting('event_columns', 3);
+$currentTicketCols    = (int)getSiteSetting('ticket_columns', 2);
 $currentEmail         = getSiteSetting('support_email', SUPPORT_EMAIL);
 $currentPhone         = getSiteSetting('support_phone', SUPPORT_PHONE);
 $currentTicketMessage = getSiteSetting('ticket_pickup_message', '');
+$currentSgKey         = getSiteSetting('sendgrid_api_key', '');
+$currentMailFrom      = getSiteSetting('mail_from_address', MAIL_FROM_ADDRESS);
+$currentMailName      = getSiteSetting('mail_from_name',    MAIL_FROM_NAME);
 $logoExists  = file_exists($imgDir . 'logo.png');
 $heroFiles  = glob($imgDir . 'hero.*') ?: [];
 $heroFile   = !empty($heroFiles) ? basename($heroFiles[0]) : null;
@@ -327,6 +344,58 @@ require_once __DIR__ . '/includes/admin-header.php';
           </div>
           <button type="submit" class="btn btn-primary btn-sm mt-3">
             <i class="bi bi-save me-1"></i>Save
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mail / SendGrid -->
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-header fw-bold"><i class="bi bi-envelope-at me-1"></i>Mail / SendGrid Settings</div>
+      <div class="card-body">
+        <p class="small text-muted mb-3">
+          These settings are stored in <code>storage/settings.json</code> and survive git pulls.
+          Leave the API key blank to fall back to the value in <code>config/mail.php</code>.
+        </p>
+        <form method="post">
+          <?= csrfField() ?>
+          <input type="hidden" name="action" value="mail">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small" for="sendgrid_api_key">SendGrid API Key</label>
+              <input type="text" name="sendgrid_api_key" id="sendgrid_api_key"
+                     class="form-control form-control-sm font-monospace"
+                     value="<?= e($currentSgKey) ?>"
+                     placeholder="SG.xxxxxxxxxxxxxxxxxxxxxx">
+              <div class="form-text">
+                <?php if ($currentSgKey && strncmp($currentSgKey, 'SG.', 3) === 0): ?>
+                  <span class="text-success"><i class="bi bi-check-circle me-1"></i>Key saved — starts with <?= e(substr($currentSgKey, 0, 10)) ?>…</span>
+                <?php elseif (defined('SENDGRID_API_KEY') && SENDGRID_API_KEY !== 'SG.REPLACE_ME'): ?>
+                  <span class="text-warning"><i class="bi bi-exclamation-circle me-1"></i>Using key from config/mail.php (<?= e(substr(SENDGRID_API_KEY, 0, 10)) ?>…)</span>
+                <?php else: ?>
+                  <span class="text-danger"><i class="bi bi-x-circle me-1"></i>No key configured — email will fail</span>
+                <?php endif; ?>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold small" for="mail_from_address">From Address</label>
+              <input type="email" name="mail_from_address" id="mail_from_address"
+                     class="form-control form-control-sm"
+                     value="<?= e($currentMailFrom) ?>"
+                     placeholder="tickets@yourdomain.com">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold small" for="mail_from_name">From Name</label>
+              <input type="text" name="mail_from_name" id="mail_from_name"
+                     class="form-control form-control-sm"
+                     value="<?= e($currentMailName) ?>"
+                     placeholder="<?= e(SITE_NAME) ?>">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm mt-3">
+            <i class="bi bi-save me-1"></i>Save Mail Settings
           </button>
         </form>
       </div>
