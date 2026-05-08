@@ -25,7 +25,7 @@ $pageTitle = $pageTitle ?? 'Admin';
     <div class="collapse navbar-collapse" id="adminNav">
       <ul class="navbar-nav ms-auto align-items-center gap-2">
         <?php if (in_array(currentAdminRole(), ['admin', 'scanner', 'box_office'])): ?>
-        <li class="nav-item d-md-none">
+        <li class="nav-item d-lg-none">
           <a class="nav-link fw-semibold text-warning" href="<?= SITE_URL ?>/public/scan.php">
             <i class="bi bi-camera-fill me-1"></i>Gate Scanner
           </a>
