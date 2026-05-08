@@ -40,12 +40,17 @@ $pageTitle = 'Order ' . $order['public_order_id'];
 $extraHead = '<meta name="csrf-token" content="' . e(csrfToken()) . '">';
 require_once __DIR__ . '/includes/admin-header.php';
 ?>
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <div>
-    <h2 class="fw-bold mb-0">Order #<?= e($order['public_order_id']) ?></h2>
-    <small class="text-muted">Created <?= formatDate($order['created_at'], 'M j, Y g:i A') ?></small>
+<div class="mb-4">
+  <div class="d-flex justify-content-between align-items-start mb-2">
+    <div>
+      <h2 class="fw-bold mb-0">Order #<?= e($order['public_order_id']) ?></h2>
+      <small class="text-muted">Created <?= formatDate($order['created_at'], 'M j, Y g:i A') ?></small>
+    </div>
+    <a href="<?= SITE_URL ?>/admin/orders.php" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i>Back
+    </a>
   </div>
-  <div class="d-flex gap-2">
+  <div class="d-flex gap-2 flex-wrap">
     <?php if ($order['status'] === 'paid'): ?>
       <button class="btn btn-outline-secondary"
               hx-post="<?= SITE_URL ?>/actions/resend-tickets.php"
@@ -64,9 +69,6 @@ require_once __DIR__ . '/includes/admin-header.php';
         </button>
       </form>
     <?php endif; ?>
-    <a href="<?= SITE_URL ?>/admin/orders.php" class="btn btn-outline-secondary">
-      <i class="bi bi-arrow-left me-1"></i>Back
-    </a>
   </div>
 </div>
 
@@ -109,27 +111,29 @@ require_once __DIR__ . '/includes/admin-header.php';
     <div class="card shadow-sm mb-4">
       <div class="card-header fw-bold">Order Items</div>
       <div class="card-body p-0">
-        <table class="table mb-0">
-          <thead class="table-light">
-            <tr><th>Ticket</th><th class="text-center">Qty</th><th class="text-end">Unit</th><th class="text-end">Total</th></tr>
-          </thead>
-          <tbody>
-            <?php foreach ($items as $item): ?>
+        <div class="table-responsive">
+          <table class="table mb-0">
+            <thead class="table-light">
+              <tr><th>Ticket</th><th class="text-center">Qty</th><th class="text-end">Unit</th><th class="text-end">Total</th></tr>
+            </thead>
+            <tbody>
+              <?php foreach ($items as $item): ?>
+                <tr>
+                  <td><?= e($item['ticket_name']) ?></td>
+                  <td class="text-center"><?= (int)$item['quantity'] ?></td>
+                  <td class="text-end"><?= formatMoney((float)$item['unit_price'] + (float)$item['unit_fee']) ?></td>
+                  <td class="text-end fw-bold"><?= formatMoney((float)$item['line_total']) ?></td>
+                </tr>
+              <?php endforeach; ?>
+            </tbody>
+            <tfoot class="table-light fw-bold">
               <tr>
-                <td><?= e($item['ticket_name']) ?></td>
-                <td class="text-center"><?= (int)$item['quantity'] ?></td>
-                <td class="text-end"><?= formatMoney((float)$item['unit_price'] + (float)$item['unit_fee']) ?></td>
-                <td class="text-end fw-bold"><?= formatMoney((float)$item['line_total']) ?></td>
+                <td colspan="3">Total Paid</td>
+                <td class="text-end"><?= formatMoney((float)$order['total']) ?></td>
               </tr>
-            <?php endforeach; ?>
-          </tbody>
-          <tfoot class="table-light fw-bold">
-            <tr>
-              <td colspan="3">Total Paid</td>
-              <td class="text-end"><?= formatMoney((float)$order['total']) ?></td>
-            </tr>
-          </tfoot>
-        </table>
+            </tfoot>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -137,56 +141,58 @@ require_once __DIR__ . '/includes/admin-header.php';
     <div class="card shadow-sm">
       <div class="card-header fw-bold">Individual Tickets</div>
       <div class="card-body p-0">
-        <table class="table table-sm mb-0 small">
-          <thead class="table-light">
-            <tr>
-              <th>Code</th>
-              <th>Type</th>
-              <th>Status</th>
-              <th>Scanned</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <?php foreach ($tickets as $t):
-              $badgeClass = ['valid' => 'success', 'used' => 'secondary', 'void' => 'dark', 'refunded' => 'warning'][$t['status']] ?? 'secondary';
-            ?>
+        <div class="table-responsive">
+          <table class="table table-sm mb-0 small">
+            <thead class="table-light">
               <tr>
-                <td class="text-monospace"><?= e($t['ticket_code']) ?></td>
-                <td><?= e($t['ticket_name']) ?></td>
-                <td><span class="badge bg-<?= $badgeClass ?>"><?= ucfirst($t['status']) ?></span></td>
-                <td>
-                  <?= $t['scanned_at'] ? formatDate($t['scanned_at'], 'M j g:i A') : '—' ?>
-                  <?php if ($t['scan_location']): ?>
-                    <br><small class="text-muted"><?= e($t['scan_location']) ?></small>
-                  <?php endif; ?>
-                </td>
-                <td>
-                  <div class="d-flex gap-1">
-                    <a href="<?= SITE_URL ?>/public/ticket.php?token=<?= urlencode($t['qr_token']) ?>"
-                       target="_blank" class="btn btn-xs btn-outline-secondary btn-sm py-0">
-                      <i class="bi bi-eye"></i>
-                    </a>
-                    <?php if ($t['status'] === 'valid' && canAdmin()): ?>
-                      <form method="post" class="d-inline">
-                        <?= csrfField() ?>
-                        <input type="hidden" name="action" value="void_ticket">
-                        <input type="hidden" name="ticket_id" value="<?= (int)$t['ticket_id'] ?>">
-                        <button type="submit" class="btn btn-xs btn-outline-danger btn-sm py-0"
-                                onclick="return confirm('Void this ticket?')">
-                          <i class="bi bi-x-circle"></i>
-                        </button>
-                      </form>
-                    <?php endif; ?>
-                  </div>
-                </td>
+                <th>Code</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th class="d-none d-sm-table-cell">Scanned</th>
+                <th>Actions</th>
               </tr>
-            <?php endforeach; ?>
-            <?php if (empty($tickets)): ?>
-              <tr><td colspan="5" class="text-center text-muted py-3">No tickets generated yet</td></tr>
-            <?php endif; ?>
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              <?php foreach ($tickets as $t):
+                $badgeClass = ['valid' => 'success', 'used' => 'secondary', 'void' => 'dark', 'refunded' => 'warning'][$t['status']] ?? 'secondary';
+              ?>
+                <tr>
+                  <td class="text-monospace"><?= e($t['ticket_code']) ?></td>
+                  <td><?= e($t['ticket_name']) ?></td>
+                  <td><span class="badge bg-<?= $badgeClass ?>"><?= ucfirst($t['status']) ?></span></td>
+                  <td class="d-none d-sm-table-cell">
+                    <?= $t['scanned_at'] ? formatDate($t['scanned_at'], 'M j g:i A') : '—' ?>
+                    <?php if ($t['scan_location']): ?>
+                      <br><small class="text-muted"><?= e($t['scan_location']) ?></small>
+                    <?php endif; ?>
+                  </td>
+                  <td>
+                    <div class="d-flex gap-1">
+                      <a href="<?= SITE_URL ?>/public/ticket.php?token=<?= urlencode($t['qr_token']) ?>"
+                         target="_blank" class="btn btn-xs btn-outline-secondary btn-sm py-0">
+                        <i class="bi bi-eye"></i>
+                      </a>
+                      <?php if ($t['status'] === 'valid' && canAdmin()): ?>
+                        <form method="post" class="d-inline">
+                          <?= csrfField() ?>
+                          <input type="hidden" name="action" value="void_ticket">
+                          <input type="hidden" name="ticket_id" value="<?= (int)$t['ticket_id'] ?>">
+                          <button type="submit" class="btn btn-xs btn-outline-danger btn-sm py-0"
+                                  onclick="return confirm('Void this ticket?')">
+                            <i class="bi bi-x-circle"></i>
+                          </button>
+                        </form>
+                      <?php endif; ?>
+                    </div>
+                  </td>
+                </tr>
+              <?php endforeach; ?>
+              <?php if (empty($tickets)): ?>
+                <tr><td colspan="5" class="text-center text-muted py-3">No tickets generated yet</td></tr>
+              <?php endif; ?>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
