@@ -11,6 +11,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verifyCsrf();
     $action = $_POST['action'] ?? '';
 
+    // ── Ticket pickup message ─────────────────────────────────────────────
+    if ($action === 'ticket_message') {
+        setSiteSetting('ticket_pickup_message', trim($_POST['ticket_pickup_message'] ?? ''));
+        flashMessage('success', 'Ticket message saved!');
+        redirect(SITE_URL . '/admin/settings.php');
+    }
+
     // ── Contact Info ─────────────────────────────────────────
     if ($action === 'contact') {
         $email = trim($_POST['support_email'] ?? '');
@@ -109,8 +116,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $currentCols       = (int)getSiteSetting('event_columns', 3);
 $currentTicketCols = (int)getSiteSetting('ticket_columns', 2);
-$currentEmail      = getSiteSetting('support_email', SUPPORT_EMAIL);
-$currentPhone      = getSiteSetting('support_phone', SUPPORT_PHONE);
+$currentEmail         = getSiteSetting('support_email', SUPPORT_EMAIL);
+$currentPhone         = getSiteSetting('support_phone', SUPPORT_PHONE);
+$currentTicketMessage = getSiteSetting('ticket_pickup_message', '');
 $logoExists  = file_exists($imgDir . 'logo.png');
 $heroFiles  = glob($imgDir . 'hero.*') ?: [];
 $heroFile   = !empty($heroFiles) ? basename($heroFiles[0]) : null;
@@ -230,6 +238,29 @@ require_once __DIR__ . '/includes/admin-header.php';
             <?php endforeach; ?>
           </div>
           <button type="submit" class="btn btn-primary btn-sm mt-3">
+            <i class="bi bi-save me-1"></i>Save
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ticket Pickup Message -->
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-header fw-bold"><i class="bi bi-info-circle me-1"></i>Ticket Pickup / Confirmation Message</div>
+      <div class="card-body">
+        <form method="post">
+          <?= csrfField() ?>
+          <input type="hidden" name="action" value="ticket_message">
+          <div class="mb-3">
+            <label class="form-label fw-semibold small" for="ticket_pickup_message">Message</label>
+            <textarea name="ticket_pickup_message" id="ticket_pickup_message"
+                      class="form-control" rows="3"
+                      placeholder="e.g. Your tickets will be available at the far left window…"><?= e($currentTicketMessage) ?></textarea>
+            <div class="form-text">Shown on the order confirmation page and included in the ticket email. Leave blank to hide.</div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm">
             <i class="bi bi-save me-1"></i>Save
           </button>
         </form>

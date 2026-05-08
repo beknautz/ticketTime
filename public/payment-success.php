@@ -56,6 +56,14 @@ require_once BASE_PATH . '/includes/nav.php';
         </div>
       <?php endif; ?>
 
+      <?php $ticketMsg = getSiteSetting('ticket_pickup_message', ''); ?>
+      <?php if ($ticketMsg && $order['status'] === 'paid'): ?>
+        <div class="alert alert-info d-flex gap-2 mb-4">
+          <i class="bi bi-info-circle-fill fs-5 flex-shrink-0 mt-1"></i>
+          <span><?= e($ticketMsg) ?></span>
+        </div>
+      <?php endif; ?>
+
       <!-- Order Details -->
       <div class="card shadow-sm mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">

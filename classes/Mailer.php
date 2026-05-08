@@ -162,8 +162,14 @@ class Mailer
 
     private function buildOrderEmailBody(array $order, array $items, array $tickets, ?array $event): string
     {
-        $siteName  = SITE_NAME;
-        $siteUrl   = SITE_URL;
+        $siteName     = SITE_NAME;
+        $siteUrl      = SITE_URL;
+        $pickupMsg    = getSiteSetting('ticket_pickup_message', '');
+        $pickupBlock  = $pickupMsg
+            ? '<div style="background:#e8f4fd;border-left:4px solid #0d6efd;padding:12px 16px;margin:16px 0;border-radius:4px;">'
+              . '<strong>Important:</strong> ' . htmlspecialchars($pickupMsg)
+              . '</div>'
+            : '';
         $eventName = $event['event_name'] ?? 'Event';
         $eventDate = $event ? date('l, F j, Y g:i A', strtotime($event['event_start'])) : '';
         $eventLoc  = $event['event_location'] ?? '';
@@ -245,6 +251,8 @@ class Mailer
     <h3>Your Tickets</h3>
     <p>Click each link below to view and download your individual tickets:</p>
     {$ticketLinks}
+
+    {$pickupBlock}
 
     <hr style="border:none;border-top:1px solid #dee2e6;margin:24px 0;">
 
