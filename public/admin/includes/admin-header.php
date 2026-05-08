@@ -19,6 +19,12 @@ $pageTitle = $pageTitle ?? 'Admin';
     <a class="navbar-brand fw-bold" href="<?= SITE_URL ?>/admin/index.php">
       <i class="bi bi-ticket-perforated-fill me-1"></i><?= SITE_NAME ?> Admin
     </a>
+    <?php if (in_array(currentAdminRole(), ['admin', 'scanner', 'box_office'])): ?>
+    <a href="<?= SITE_URL ?>/public/scan.php"
+       class="btn btn-warning btn-sm d-lg-none me-2 fw-bold">
+      <i class="bi bi-camera-fill me-1"></i>Scanner
+    </a>
+    <?php endif; ?>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNav">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -44,16 +50,6 @@ $pageTitle = $pageTitle ?? 'Admin';
     </div>
   </div>
 </nav>
-
-<?php if (in_array(currentAdminRole(), ['admin', 'scanner', 'box_office'])): ?>
-<div class="d-lg-none">
-  <a href="<?= SITE_URL ?>/public/scan.php"
-     class="d-flex align-items-center justify-content-center gap-2 py-2 fw-bold text-decoration-none"
-     style="background:var(--tt-primary);color:#000;">
-    <i class="bi bi-camera-fill fs-5"></i> Gate Scanner
-  </a>
-</div>
-<?php endif; ?>
 
 <div class="container-fluid">
 <div class="row">
