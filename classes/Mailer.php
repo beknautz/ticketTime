@@ -199,9 +199,6 @@ class Mailer
             );
         }
 
-        // Will-call QR
-        $willCallUrl = $siteUrl . '/public/willcall.php?token=' . urlencode($order['order_barcode_token']);
-
         return <<<HTML
 <!DOCTYPE html>
 <html>
@@ -219,6 +216,7 @@ class Mailer
   <div style="padding:32px;">
     <p>Hi {$custName},</p>
     <p>Thanks for your order! Here are your tickets for <strong>{$eventName}</strong>.</p>
+    {$pickupBlock}
 
     <table style="width:100%;border-collapse:collapse;margin:16px 0;">
       <tr style="background:#f8f9fa;">
@@ -252,13 +250,10 @@ class Mailer
     <p>Click each link below to view and download your individual tickets:</p>
     {$ticketLinks}
 
-    {$pickupBlock}
-
     <hr style="border:none;border-top:1px solid #dee2e6;margin:24px 0;">
 
     <h3>Will-Call Backup</h3>
-    <p>If you can't access your email at the gate, staff can look up your order:</p>
-    <p><a href="{$willCallUrl}" style="color:#0d6efd;">{$willCallUrl}</a></p>
+    <p>If you can't access your email at the gate, staff can look up your order by Order ID:</p>
     <p><strong>Order ID:</strong> {$orderId}</p>
 
     <hr style="border:none;border-top:1px solid #dee2e6;margin:24px 0;">
