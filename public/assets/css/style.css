@@ -315,6 +315,107 @@ main {
   display: inline-block;
 }
 
+/* ── Mobile Gate Scanner ─────────────────────────────────── */
+.scanner-mobile {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 56px);
+  background: #000;
+  overflow: hidden;
+}
+
+.scanner-mobile-camera {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  background: #000;
+}
+
+#mVideo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.scanner-target-frame {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -60%);
+  width: 220px;
+  height: 220px;
+  pointer-events: none;
+}
+
+.corner {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border-color: var(--tt-primary);
+  border-style: solid;
+}
+
+.corner.tl { top: 0; left: 0;  border-width: 4px 0 0 4px; }
+.corner.tr { top: 0; right: 0; border-width: 4px 4px 0 0; }
+.corner.bl { bottom: 0; left: 0;  border-width: 0 0 4px 4px; }
+.corner.br { bottom: 0; right: 0; border-width: 0 4px 4px 0; }
+
+.scanner-beam {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  height: 2px;
+  background: var(--tt-primary);
+  box-shadow: 0 0 6px var(--tt-primary);
+  animation: beamScan 2s ease-in-out infinite;
+  top: 10%;
+}
+
+@keyframes beamScan {
+  0%   { top: 10%; }
+  50%  { top: 88%; }
+  100% { top: 10%; }
+}
+
+.scanner-event-badge {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,.65);
+  color: #fff;
+  font-size: .8rem;
+  padding: 4px 14px;
+  border-radius: 50rem;
+  white-space: nowrap;
+  max-width: 90vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.scanner-status {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,.6);
+  color: rgba(255,255,255,.9);
+  font-size: .8rem;
+  padding: 4px 14px;
+  border-radius: 50rem;
+  white-space: nowrap;
+}
+
+.scanner-mobile-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: #111;
+  flex-shrink: 0;
+}
+
 /* ── Admin sidebar (stays dark) ──────────────────────────── */
 .admin-sidebar {
   min-height: calc(100vh - 56px);
