@@ -24,13 +24,6 @@ $pageTitle = $pageTitle ?? 'Admin';
     </button>
     <div class="collapse navbar-collapse" id="adminNav">
       <ul class="navbar-nav ms-auto align-items-center gap-2">
-        <?php if (in_array(currentAdminRole(), ['admin', 'scanner', 'box_office'])): ?>
-        <li class="nav-item d-lg-none">
-          <a class="nav-link fw-semibold text-warning" href="<?= SITE_URL ?>/public/scan.php">
-            <i class="bi bi-camera-fill me-1"></i>Gate Scanner
-          </a>
-        </li>
-        <?php endif; ?>
         <li class="nav-item">
           <a class="nav-link" href="<?= SITE_URL ?>/public/index.php" target="_blank">
             <i class="bi bi-box-arrow-up-right me-1"></i>View Site
@@ -51,6 +44,16 @@ $pageTitle = $pageTitle ?? 'Admin';
     </div>
   </div>
 </nav>
+
+<?php if (in_array(currentAdminRole(), ['admin', 'scanner', 'box_office'])): ?>
+<div class="d-lg-none">
+  <a href="<?= SITE_URL ?>/public/scan.php"
+     class="d-flex align-items-center justify-content-center gap-2 py-2 fw-bold text-decoration-none"
+     style="background:var(--tt-primary);color:#000;">
+    <i class="bi bi-camera-fill fs-5"></i> Gate Scanner
+  </a>
+</div>
+<?php endif; ?>
 
 <div class="container-fluid">
 <div class="row">
