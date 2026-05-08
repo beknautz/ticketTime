@@ -26,6 +26,32 @@ $ticketUrl   = SITE_URL . '/public/ticket.php?token=' . urlencode($ticket['qr_to
 $statusClass = 'ticket-status-' . $ticket['status'];
 $statusLabel = ['valid' => 'Valid', 'used' => 'Used - Entry Recorded', 'void' => 'Voided', 'refunded' => 'Refunded'][$ticket['status']] ?? ucfirst($ticket['status']);
 
+// QR code — fetch from API and cache locally as PNG
+$qrDataUrl = null;
+if ($ticket['status'] === 'valid') {
+    $qrCachePath = QR_PATH . '/ticket-' . $ticket['ticket_id'] . '.png';
+    // Remove stale SVG placeholders from old broken fallback
+    $qrSvgPath = QR_PATH . '/ticket-' . $ticket['ticket_id'] . '.svg';
+    if (file_exists($qrSvgPath)) { @unlink($qrSvgPath); }
+
+    if (!file_exists($qrCachePath)) {
+        $apiUrl = 'https://api.qrserver.com/v1/create-qr-code/?'
+                . http_build_query(['size' => '300x300', 'ecc' => 'H', 'data' => $ticketUrl]);
+        $ch = curl_init($apiUrl);
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 10, CURLOPT_FOLLOWLOCATION => true]);
+        $png  = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($png && $code === 200) {
+            file_put_contents($qrCachePath, $png);
+        }
+    }
+
+    if (file_exists($qrCachePath)) {
+        $qrDataUrl = 'data:image/png;base64,' . base64_encode(file_get_contents($qrCachePath));
+    }
+}
+
 $pageTitle = 'Ticket: ' . $ticket['ticket_code'];
 require_once BASE_PATH . '/includes/header.php';
 require_once BASE_PATH . '/includes/nav.php';
@@ -84,9 +110,14 @@ require_once BASE_PATH . '/includes/nav.php';
       <!-- QR Code -->
       <?php if ($ticket['status'] === 'valid'): ?>
         <div class="ticket-qr">
-          <div id="qr-container" style="display:flex;justify-content:center;align-items:center;min-height:220px;">
-            <span class="text-muted small">Generating QR code…</span>
-          </div>
+          <?php if ($qrDataUrl): ?>
+            <img src="<?= $qrDataUrl ?>" alt="QR Code"
+                 style="display:block;margin:0 auto;max-width:260px;width:100%;border-radius:4px;">
+          <?php else: ?>
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&ecc=H&data=<?= urlencode($ticketUrl) ?>"
+                 alt="QR Code"
+                 style="display:block;margin:0 auto;max-width:260px;width:100%;border-radius:4px;">
+          <?php endif; ?>
           <div class="ticket-code mt-2"><?= e($ticket['ticket_code']) ?></div>
           <small class="text-muted">Show this QR code at the gate</small>
         </div>
@@ -109,32 +140,6 @@ require_once BASE_PATH . '/includes/nav.php';
     </a>
   </div>
 </main>
-
-<?php if ($ticket['status'] === 'valid'): ?>
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-<script>
-(function () {
-  var container = document.getElementById('qr-container');
-  if (!container || typeof QRCode === 'undefined') return;
-
-  var canvas = document.createElement('canvas');
-  QRCode.toCanvas(canvas, <?= json_encode($ticketUrl) ?>, {
-    width: 260,
-    margin: 2,
-    color: { dark: '#000000', light: '#ffffff' },
-    errorCorrectionLevel: 'H'
-  }, function (err) {
-    container.innerHTML = '';
-    if (err) {
-      container.innerHTML = '<p class="text-danger small">Could not generate QR code. Try refreshing.</p>';
-    } else {
-      canvas.style.cssText = 'display:block;max-width:100%;border-radius:4px;';
-      container.appendChild(canvas);
-    }
-  });
-}());
-</script>
-<?php endif; ?>
 
 <?php require_once BASE_PATH . '/includes/footer.php'; ?>
 
